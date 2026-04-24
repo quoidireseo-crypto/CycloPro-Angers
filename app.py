@@ -65,8 +65,7 @@ const ArtisanCard = () => {
         pour vos dépannages en centre-ville. 0 émission, 100% efficacité.
       </p>
       <div style={styles.stats}>
-        <span>📦 Capacité : 150kg</span>
-        <span>⭐ 4.9 (28 avis)</span>
+<span>\U0001F4E6 Capacité : 150kg</span>        <span>⭐ 4.9 (28 avis)</span>
       </div>
       <a href="tel:0241000000" style={styles.button}>
         Contacter par téléphone
