@@ -179,71 +179,84 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F0] text-[#141414] font-sans">
+    <div className="min-h-screen bg-[#F5F5F0] text-[#141414] font-sans overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#F5F5F0]/80 backdrop-blur-md border-b border-[#141414]/10 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-[#5A5A40] p-2 rounded-xl">
-              <Bike className="w-6 h-6 text-[#F5F5F0]" />
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+            <div className="flex items-center justify-between w-full md:w-auto shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="bg-[#5A5A40] p-2 rounded-xl">
+                  <Bike className="w-6 h-6 text-[#F5F5F0]" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-semibold tracking-tight">VéloPro Angers</h1>
+                  <p className="text-[10px] text-[#5A5A40] font-bold uppercase tracking-wider">Artisans à vélo</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsRegistering(true)}
+                className="md:hidden px-3 py-1.5 bg-[#141414] text-white rounded-full text-[9px] font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-colors whitespace-nowrap"
+              >
+                Inscrire
+              </button>
             </div>
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">VéloPro Angers</h1>
-              <p className="text-xs text-[#5A5A40] font-medium uppercase tracking-wider">Artisans à vélo</p>
+
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              {/* Search on desktop */}
+              <div className="relative flex-1 max-w-md hidden md:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#141414]/40" />
+                <input 
+                  type="text"
+                  placeholder="Artisan, service..."
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-[#141414]/10 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#5A5A40]/20 transition-all shadow-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
+                <button 
+                  onClick={() => setIsRegistering(true)}
+                  className="hidden md:block px-4 py-2 bg-[#141414] text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-colors whitespace-nowrap"
+                >
+                  Devenir partenaire
+                </button>
+
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <div className="flex bg-white border border-[#141414]/10 rounded-full p-0.5 md:p-1 shadow-sm">
+                    <button 
+                      onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                      className={`px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
+                        showFavoritesOnly ? 'bg-red-500 text-white' : 'text-[#141414]/40 hover:text-[#141414]'
+                      }`}
+                    >
+                      <Heart className={`w-3 h-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                      <span className="hidden sm:inline">Favoris</span>
+                    </button>
+                  </div>
+
+                  <div className="flex bg-white border border-[#141414]/10 rounded-full p-0.5 md:p-1 shadow-sm">
+                    <button 
+                      onClick={() => setViewMode('grid')}
+                      className={`px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all ${
+                        viewMode === 'grid' ? 'bg-[#5A5A40] text-white' : 'text-[#141414]/40 hover:text-[#141414]'
+                      }`}
+                    >
+                      Liste
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('map')}
+                      className={`px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all ${
+                        viewMode === 'map' ? 'bg-[#5A5A40] text-white' : 'text-[#141414]/40 hover:text-[#141414]'
+                      }`}
+                    >
+                      Carte
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-xl hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#141414]/40" />
-              <input 
-                type="text"
-                id="search-input"
-                placeholder="Rechercher un plombier, une entreprise..."
-                className="w-full pl-10 pr-4 py-2 bg-white border border-[#141414]/10 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#5A5A40]/20 transition-all shadow-sm"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <button 
-              onClick={() => setIsRegistering(true)}
-              className="px-4 py-2 bg-[#141414] text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-colors whitespace-nowrap"
-            >
-              Devenir partenaire
-            </button>
-
-            <div className="flex bg-white border border-[#141414]/10 rounded-full p-1 shadow-sm">
-              <button 
-                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
-                  showFavoritesOnly ? 'bg-red-500 text-white' : 'text-[#141414]/40 hover:text-[#141414]'
-                }`}
-              >
-                <Heart className={`w-3 h-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-                Favoris
-              </button>
-            </div>
-
-            <div className="flex bg-white border border-[#141414]/10 rounded-full p-1 shadow-sm">
-              <button 
-                onClick={() => setViewMode('grid')}
-                className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
-                  viewMode === 'grid' ? 'bg-[#5A5A40] text-white' : 'text-[#141414]/40 hover:text-[#141414]'
-                }`}
-              >
-                Liste
-              </button>
-              <button 
-                onClick={() => setViewMode('map')}
-                className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
-                  viewMode === 'map' ? 'bg-[#5A5A40] text-white' : 'text-[#141414]/40 hover:text-[#141414]'
-                }`}
-              >
-                Carte
-              </button>
-            </div>
-          </div>
-        </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
@@ -660,27 +673,29 @@ export default function App() {
         </section>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-          <div className="flex items-center gap-2 mr-4 text-xs font-bold uppercase tracking-widest text-[#141414]/40">
+        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide">
+          <div className="flex items-center gap-2 mr-2 text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 shrink-0">
             <Filter className="w-3 h-3" />
-            Filtrer
+            <span className="hidden sm:inline">Filtrer</span>
           </div>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-                selectedCategory === cat 
-                ? 'bg-[#5A5A40] text-[#F5F5F0] shadow-lg shadow-[#5A5A40]/20' 
-                : 'bg-white text-[#141414]/60 hover:bg-[#141414]/5 border border-[#141414]/10'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {cat !== 'Tous' && CATEGORY_ICONS[cat as Category]}
-                {cat}
-              </div>
-            </button>
-          ))}
+          <div className="flex gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-5 py-2 rounded-full text-[12px] font-medium transition-all whitespace-nowrap shrink-0 ${
+                  selectedCategory === cat 
+                  ? 'bg-[#5A5A40] text-[#F5F5F0] shadow-lg shadow-[#5A5A40]/20' 
+                  : 'bg-white text-[#141414]/60 hover:bg-[#141414]/5 border border-[#141414]/10'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {cat !== 'Tous' && CATEGORY_ICONS[cat as Category]}
+                  {cat}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Results Section */}
