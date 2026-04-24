@@ -37,8 +37,7 @@ import {
   Facebook,
   Twitter,
   Linkedin,
-  Share2,
-  Calendar
+  Share2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -109,8 +108,6 @@ export default function App() {
     const saved = localStorage.getItem('angers_artisans_favs');
     return saved ? JSON.parse(saved) : [];
   });
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const [bookingPro, setBookingPro] = useState<Entrepreneur | null>(null);
 
   useEffect(() => {
     localStorage.setItem('angers_artisans_favs', JSON.stringify(favorites));
@@ -855,17 +852,6 @@ export default function App() {
                     </div>
 
                   <div className="flex flex-wrap gap-2 pt-6 border-t border-[#141414]/5">
-                    <button 
-                      onClick={() => {
-                        setBookingPro(pro);
-                        setIsBookingOpen(true);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 py-3 bg-[#5A5A40] text-white rounded-xl text-xs font-bold hover:bg-[#4A4A30] transition-colors mb-2"
-                    >
-                      <Calendar className="w-3.5 h-3.5" />
-                      Prendre rendez-vous
-                    </button>
-
                     <div className="w-full flex items-center justify-between mb-2">
                         <span className="text-[9px] font-bold uppercase tracking-widest text-[#141414]/30 flex items-center gap-1">
                           <Share2 className="w-2.5 h-2.5" /> Partager
@@ -1028,68 +1014,6 @@ export default function App() {
         </footer>
       </main>
 
-      {/* Booking Modal */}
-      <AnimatePresence>
-        {isBookingOpen && bookingPro && (
-          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-6 bg-black/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl relative"
-            >
-              <div className="p-8 md:p-10">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h2 className="text-2xl font-serif italic mb-1">Demande de RDV</h2>
-                    <p className="text-sm text-[#141414]/60">Intervention avec {bookingPro.name}</p>
-                  </div>
-                  <button onClick={() => setIsBookingOpen(false)} className="p-2 hover:bg-[#141414]/5 rounded-full transition-colors">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 px-1">Votre Nom</label>
-                      <input type="text" className="w-full bg-[#141414]/5 border-none rounded-xl p-3.5 text-sm" placeholder="Jean Dupont" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 px-1">Téléphone</label>
-                      <input type="tel" className="w-full bg-[#141414]/5 border-none rounded-xl p-3.5 text-sm" placeholder="06..." />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 px-1">Type de besoin</label>
-                    <select className="w-full bg-[#141414]/5 border-none rounded-xl p-3.5 text-sm appearance-none">
-                      <option>Dépannage urgent</option>
-                      <option>Installation / Travaux</option>
-                      <option>Devis gratuit</option>
-                      <option>Autre demande</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 px-1">Message / Description</label>
-                    <textarea className="w-full bg-[#141414]/5 border-none rounded-xl p-3.5 text-sm h-32 resize-none" placeholder="Précisez votre besoin ici..."></textarea>
-                  </div>
-
-                  <button 
-                    onClick={() => {
-                      alert('Votre demande a bien été envoyée à ' + bookingPro.name + ' !');
-                      setIsBookingOpen(false);
-                    }}
-                    className="w-full py-4 bg-[#5A5A40] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-colors shadow-lg shadow-[#5A5A40]/20 flex items-center justify-center gap-2"
-                  >
-                    <Send className="w-4 h-4" />
-                    Envoyer ma demande
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
