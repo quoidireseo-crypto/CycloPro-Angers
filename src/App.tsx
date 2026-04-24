@@ -225,18 +225,6 @@ export default function App() {
                 <div className="flex items-center gap-1.5 md:gap-2">
                   <div className="flex bg-white border border-[#141414]/10 rounded-full p-0.5 md:p-1 shadow-sm">
                     <button 
-                      onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                      className={`px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
-                        showFavoritesOnly ? 'bg-red-500 text-white' : 'text-[#141414]/40 hover:text-[#141414]'
-                      }`}
-                    >
-                      <Heart className={`w-3 h-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-                      <span className="hidden sm:inline">Favoris</span>
-                    </button>
-                  </div>
-
-                  <div className="flex bg-white border border-[#141414]/10 rounded-full p-0.5 md:p-1 shadow-sm">
-                    <button 
                       onClick={() => setViewMode('grid')}
                       className={`px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all ${
                         viewMode === 'grid' ? 'bg-[#5A5A40] text-white' : 'text-[#141414]/40 hover:text-[#141414]'
@@ -679,6 +667,17 @@ export default function App() {
             <span className="hidden sm:inline">Filtrer</span>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              className={`px-5 py-2 rounded-full text-[12px] font-medium transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+                showFavoritesOnly 
+                ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' 
+                : 'bg-white text-[#141414]/60 hover:bg-[#141414]/5 border border-[#141414]/10'
+              }`}
+            >
+              <Heart className={`w-3.5 h-3.5 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+              Favoris
+            </button>
             {categories.map((cat) => (
               <button
                 key={cat}
