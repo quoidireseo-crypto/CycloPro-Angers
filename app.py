@@ -1,77 +1,54 @@
-import React from 'react';
+import streamlit as st
 
-const ArtisanCard = () => {
-  // Couleurs : Ivoire (#FFFFF0) et Terre d'ombre (#735C44)
-  const styles = {
-    card: {
-      backgroundColor: '#FFFFF0',
-      border: '2px solid #735C44',
-      borderRadius: '16px',
-      padding: '24px',
-      maxWidth: '400px',
-      color: '#735C44',
-      fontFamily: 'sans-serif',
-      boxShadow: '0 4px 15px rgba(115, 92, 68, 0.1)',
-      margin: '20px auto'
-    },
-    badge: {
-      backgroundColor: '#735C44',
-      color: '#FFFFF0',
-      padding: '4px 12px',
-      borderRadius: '20px',
-      fontSize: '0.75rem',
-      fontWeight: 'bold',
-      textTransform: 'uppercase' as const,
-      display: 'inline-block',
-      marginBottom: '12px'
-    },
-    title: {
-      margin: '0 0 8px 0',
-      fontSize: '1.5rem',
-      fontWeight: '700'
-    },
-    description: {
-      fontSize: '0.95rem',
-      lineHeight: '1.5',
-      marginBottom: '16px'
-    },
-    stats: {
-      borderTop: '1px solid #735C44',
-      paddingTop: '12px',
-      fontSize: '0.85rem',
-      display: 'flex',
-      justifyContent: 'space-between',
-      opacity: 0.9
-    },
-    button: {
-      display: 'block',
-      textAlign: 'center' as const,
-      backgroundColor: '#735C44',
-      color: '#FFFFF0',
-      textDecoration: 'none',
-      padding: '10px',
-      borderRadius: '8px',
-      marginTop: '15px',
-      fontWeight: 'bold'
+# Configuration de la page
+st.set_page_config(page_title="VéloPro Angers", page_icon="🚲")
+
+# 1. STYLE VISUEL (Ivoire et Terre d'ombre)
+st.markdown("""
+    <style>
+    .card {
+        background-color: #FFFFF0; /* Ivoire */
+        border: 2px solid #735C44; /* Terre d'ombre */
+        padding: 25px;
+        border-radius: 15px;
+        color: #735C44;
+        font-family: sans-serif;
+        margin-bottom: 20px;
     }
-  };
+    .badge {
+        background-color: #735C44;
+        color: #FFFFF0;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+    .button {
+        display: inline-block;
+        background-color: #735C44;
+        color: #FFFFF0 !important;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 8px;
+        margin-top: 15px;
+        font-weight: bold;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-  return (
-    <div style={styles.card}>
-      <div style={styles.badge}>Plomberie Écolo</div>
-      <h2 style={styles.title}>Jean La Fuite</h2>
-      <p style={styles.description}>
-        Artisan plombier à Angers. Je me déplace exclusivement en vélo-cargo 
-        pour vos dépannages en centre-ville. 0 émission, 100% efficacité.
-      </p>
-      <div style={styles.stats}>
-<span>\U0001F4E6 Capacité : 150kg</span>        <span>⭐ 4.9 (28 avis)</span>
-      </div>
-      <a href="tel:0241000000" style={styles.button}>
-        Contacter par téléphone
-      </a>
+# 2. CONTENU DE L'APPLICATION
+st.title("🚲 VéloPro Angers")
+st.write("La plateforme des artisans qui font battre le cœur d'Angers à vélo.")
+
+# 3. AFFICHAGE D'UNE CARTE ARTISAN
+st.markdown("""
+    <div class="card">
+        <span class="badge">PLOMBERIE ÉCOLO</span>
+        <h2>Jean La Fuite</h2>
+        <p>Spécialiste du dépannage urgent à Angers. 
+        Intervention 100% décarbonée en vélo-cargo.</p>
+        <hr style="border: 0.5px solid #735C44; opacity: 0.3;">
+        <p><strong>Capacité :</strong> 150kg | <strong>Note :</strong> 4.9/5</p>
+        <a href="tel:0241000000" class="button">Appeler l'artisan</a>
     </div>
-  );
-};
-
-export default ArtisanCard;
+    """, unsafe_allow_html=True)
