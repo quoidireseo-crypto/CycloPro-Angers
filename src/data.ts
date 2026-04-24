@@ -11,6 +11,7 @@ export const entrepreneurs: Entrepreneur[] = [
     location: 'Place Giffard-Langevin, Angers',
     coordinates: [47.4645, -0.5518],
     image: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?q=80&w=800&auto=format&fit=crop',
+    co2Saved: 850,
     stats: {
       kgTransported: 200,
       yearsActive: 10,
@@ -35,6 +36,7 @@ export const entrepreneurs: Entrepreneur[] = [
     location: 'Quartier de la Doutre, Angers',
     coordinates: [47.4760, -0.5630],
     image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=800&auto=format&fit=crop',
+    co2Saved: 420,
     contact: {
       phone: '06 12 34 56 78',
       email: 'alexis.plombier@example.com'
@@ -52,6 +54,7 @@ export const entrepreneurs: Entrepreneur[] = [
     location: 'Centre-ville et hypercentre, Angers',
     coordinates: [47.4710, -0.5520],
     image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5997?q=80&w=800&auto=format&fit=crop',
+    co2Saved: 1250,
     stats: {
       kgTransported: 450,
       yearsActive: 8,
@@ -70,6 +73,7 @@ export const entrepreneurs: Entrepreneur[] = [
     description: 'Réparation de vélos et trottinettes à domicile ou en entreprise par les frères Kévin et Luigi Moreau (Lauréats Initiatives Économie Circulaire 2025). Intervention dans un rayon de 5km.',
     location: 'Atelier Rue Pocquet-de-Livonnières + Mobile',
     coordinates: [47.4735, -0.5480],
+    co2Saved: 310,
     contact: {
       website: 'https://cobi-angers.fr',
       phone: '07 12 89 45 67'

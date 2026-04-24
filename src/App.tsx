@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   Bike, 
@@ -37,9 +37,13 @@ import {
   Facebook,
   Twitter,
   Linkedin,
-  Share2
+  Share2,
+  Calendar,
+  Sparkles,
+  Bot
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from "@google/genai";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -103,6 +107,27 @@ export default function App() {
     coordinates: [47.4710, -0.5520] as [number, number]
   });
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    const saved = localStorage.getItem('angers_artisans_favs');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [bookingPro, setBookingPro] = useState<Entrepreneur | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{role: 'user' | 'model', text: string}[]>([]);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('angers_artisans_favs', JSON.stringify(favorites));
+  }, [favorites]);
+
+  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFavorites(prev => 
+      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+    );
+  };
 
   const shareOnSocial = (platform: 'facebook' | 'twitter' | 'linkedin', pro: Entrepreneur) => {
     const url = encodeURIComponent(window.location.href);
@@ -117,8 +142,40 @@ export default function App() {
     window.open(shareUrls[platform], '_blank', 'noreferrer');
   };
 
+  const askAI = async (text: string) => {
+    if (!text.trim()) return;
+    
+    const newMessages = [...chatMessages, { role: 'user' as const, text }];
+    setChatMessages(newMessages);
+    setIsChatLoading(true);
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const context = data.map(p => `- ${p.name} (${p.category}): ${p.description}`).join('\n');
+      
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: text,
+        config: {
+          systemInstruction: `Tu es le "Concierge Cyclo" d'Angers. Ton but est d'aider les gens à trouver l'artisan à vélo idéal à Angers. 
+          Voici la liste des artisans disponibles :
+          ${context}
+          
+          Réponds de manière conviviale, courte et encourageante sur la transition écologique. Si on te demande quelqu'un qui n'est pas dans la liste, propose l'alternative la plus proche ou explique que nous cherchons de nouveaux partenaires.`
+        }
+      });
+
+      setChatMessages([...newMessages, { role: 'model' as const, text: response.text || "Désolé, je rencontre une petite difficulté technique." }]);
+    } catch (error) {
+      console.error(error);
+      setChatMessages([...newMessages, { role: 'model' as const, text: "Oups ! Mon dérailleur a sauté. Peux-tu reformuler ?" }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
   const filteredEntrepreneurs = useMemo(() => {
-    return data.filter(pro => {
+    let result = data.filter(pro => {
       const searchTerms = searchQuery.toLowerCase();
       const matchesSearch = pro.name.toLowerCase().includes(searchTerms) || 
                            pro.description.toLowerCase().includes(searchTerms) ||
@@ -127,7 +184,13 @@ export default function App() {
       const matchesCategory = selectedCategory === 'Tous' || pro.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory, data]);
+
+    if (showFavoritesOnly) {
+      result = result.filter(pro => favorites.includes(pro.id));
+    }
+
+    return result;
+  }, [searchQuery, selectedCategory, data, favorites, showFavoritesOnly]);
 
   const categories: (Category | 'Tous')[] = ['Tous', 'Paysage', 'Plomberie', 'Menuiserie', 'Électricité', 'Livraison', 'Bâtiment', 'Réparation', 'Solidarité', 'Logistique'];
 
@@ -189,6 +252,18 @@ export default function App() {
             >
               Devenir partenaire
             </button>
+
+            <div className="flex bg-white border border-[#141414]/10 rounded-full p-1 shadow-sm">
+              <button 
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
+                  showFavoritesOnly ? 'bg-red-500 text-white' : 'text-[#141414]/40 hover:text-[#141414]'
+                }`}
+              >
+                <Heart className={`w-3 h-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                Favoris
+              </button>
+            </div>
 
             <div className="flex bg-white border border-[#141414]/10 rounded-full p-1 shadow-sm">
               <button 
@@ -672,6 +747,20 @@ export default function App() {
                         referrerPolicy="no-referrer"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                      <button 
+                        onClick={(e) => toggleFavorite(pro.id, e)}
+                        className={`absolute top-4 right-4 p-2 rounded-full backdrop-blur-md transition-all z-10 ${
+                          favorites.includes(pro.id) ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-white/20 text-white hover:bg-white/40'
+                        }`}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${favorites.includes(pro.id) ? 'fill-current' : ''}`} />
+                      </button>
+                      {pro.co2Saved && (
+                        <div className="absolute bottom-4 left-4 flex items-center gap-1.5 px-2 py-0.5 bg-white/90 backdrop-blur-md text-[#5A5A40] rounded-md text-[9px] font-bold shadow-sm">
+                          <Zap className="w-2.5 h-2.5" />
+                          -{pro.co2Saved}kg CO2/an
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="p-6 flex-1 flex flex-col justify-between">
@@ -803,8 +892,19 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 pt-6 border-t border-[#141414]/5">
-                      <div className="w-full flex items-center justify-between mb-2">
+                  <div className="flex flex-wrap gap-2 pt-6 border-t border-[#141414]/5">
+                    <button 
+                      onClick={() => {
+                        setBookingPro(pro);
+                        setIsBookingOpen(true);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-3 bg-[#5A5A40] text-white rounded-xl text-xs font-bold hover:bg-[#4A4A30] transition-colors mb-2"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      Prendre rendez-vous
+                    </button>
+
+                    <div className="w-full flex items-center justify-between mb-2">
                         <span className="text-[9px] font-bold uppercase tracking-widest text-[#141414]/30 flex items-center gap-1">
                           <Share2 className="w-2.5 h-2.5" /> Partager
                         </span>
@@ -965,6 +1065,152 @@ export default function App() {
           </div>
         </footer>
       </main>
+
+      {/* Booking Modal */}
+      <AnimatePresence>
+        {isBookingOpen && bookingPro && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl relative"
+            >
+              <div className="p-8 md:p-10">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <h2 className="text-2xl font-serif italic mb-1">Demande de RDV</h2>
+                    <p className="text-sm text-[#141414]/60">Intervention avec {bookingPro.name}</p>
+                  </div>
+                  <button onClick={() => setIsBookingOpen(false)} className="p-2 hover:bg-[#141414]/5 rounded-full transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 px-1">Votre Nom</label>
+                      <input type="text" className="w-full bg-[#141414]/5 border-none rounded-xl p-3.5 text-sm" placeholder="Jean Dupont" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 px-1">Téléphone</label>
+                      <input type="tel" className="w-full bg-[#141414]/5 border-none rounded-xl p-3.5 text-sm" placeholder="06..." />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 px-1">Type de besoin</label>
+                    <select className="w-full bg-[#141414]/5 border-none rounded-xl p-3.5 text-sm appearance-none">
+                      <option>Dépannage urgent</option>
+                      <option>Installation / Travaux</option>
+                      <option>Devis gratuit</option>
+                      <option>Autre demande</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 px-1">Message / Description</label>
+                    <textarea className="w-full bg-[#141414]/5 border-none rounded-xl p-3.5 text-sm h-32 resize-none" placeholder="Précisez votre besoin ici..."></textarea>
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      alert('Votre demande a bien été envoyée à ' + bookingPro.name + ' !');
+                      setIsBookingOpen(false);
+                    }}
+                    className="w-full py-4 bg-[#5A5A40] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-colors shadow-lg shadow-[#5A5A40]/20 flex items-center justify-center gap-2"
+                  >
+                    <Send className="w-4 h-4" />
+                    Envoyer ma demande
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Assistant Widget */}
+      <div className="fixed bottom-8 right-8 z-[1500] flex flex-col items-end gap-4">
+        <AnimatePresence>
+          {isChatOpen && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20, transformOrigin: 'bottom right' }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-[350px] max-w-[calc(100vw-4rem)] bg-white rounded-3xl shadow-2xl border border-[#141414]/10 overflow-hidden flex flex-col h-[500px]"
+            >
+              <div className="bg-[#5A5A40] p-4 text-white flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-xl">
+                    <Bot className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold leading-none">Concierge Cyclo</h3>
+                    <p className="text-[10px] opacity-70">Assistant IA</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsChatOpen(false)} className="hover:bg-white/10 p-1.5 rounded-lg transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+                {chatMessages.length === 0 && (
+                  <div className="text-center py-8">
+                    <Sparkles className="w-8 h-8 text-[#5A5A40]/20 mx-auto mb-2" />
+                    <p className="text-xs text-[#141414]/40">Posez-moi une question sur les artisans à vélo d'Angers !</p>
+                  </div>
+                )}
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${
+                      msg.role === 'user' ? 'bg-[#5A5A40] text-white rounded-tr-none' : 'bg-[#141414]/5 text-[#141414] rounded-tl-none'
+                    }`}>
+                      {msg.text}
+                    </div>
+                  </div>
+                ))}
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-[#141414]/5 p-3 rounded-2xl rounded-tl-none flex gap-1">
+                      <span className="w-1 h-1 bg-[#141414]/20 rounded-full animate-bounce" />
+                      <span className="w-1 h-1 bg-[#141414]/20 rounded-full animate-bounce [animation-delay:0.2s]" />
+                      <span className="w-1 h-1 bg-[#141414]/20 rounded-full animate-bounce [animation-delay:0.4s]" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 border-t border-[#141414]/5 flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Comment puis-je vous aider ?" 
+                  className="flex-1 bg-[#141414]/5 border-none rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-[#5A5A40]"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      askAI((e.target as HTMLInputElement).value);
+                      (e.target as HTMLInputElement).value = '';
+                    }
+                  }}
+                />
+                <button className="p-2 bg-[#5A5A40] text-white rounded-xl hover:bg-[#4A4A30] transition-colors">
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <button 
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className="p-4 bg-[#5A5A40] text-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all shadow-[#5A5A40]/30 relative group"
+        >
+          <Bot className="w-6 h-6" />
+          <span className="absolute right-full mr-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#141414] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            Besoin d'aide ?
+          </span>
+        </button>
+      </div>
     </div>
   );
 }

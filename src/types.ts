@@ -18,6 +18,7 @@ export interface Entrepreneur {
   location: string;
   coordinates: [number, number];
   image?: string;
+  co2Saved?: number; // Kg of CO2 saved per year
   reviews?: Review[];
   stats?: {
     kgTransported?: number;
