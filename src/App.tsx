@@ -579,119 +579,190 @@ export default function App() {
           )}
         </AnimatePresence>
         <section className="mb-12">
-          <div className="bg-[#141414] text-[#F5F5F0] rounded-[2rem] p-8 md:p-12 overflow-hidden relative">
-            <div className="relative z-10 max-w-2xl">
-              <span className="inline-block px-3 py-1 bg-[#5A5A40] rounded-full text-[10px] font-bold uppercase tracking-widest mb-4">Focus Écologique</span>
-              <h2 className="text-4xl md:text-5xl font-serif italic mb-6 leading-tight">
-                Le vélo instaure une proximité qui rassure et inspire confiance.
-              </h2>
-              <p className="text-[#F5F5F0]/70 text-lg mb-8 leading-relaxed">
-                Découvrez les artisans d'Angers qui ont troqué leur camion contre un vélo-cargo. Plus rapides, plus proches et 100% éco-responsables.
-              </p>
-              <div className="flex flex-wrap gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-[#5A5A40] rounded-full" />
-                  <span>Pas de bouchons</span>
+          <div className="relative h-[500px] md:h-[600px] rounded-[2.5rem] md:rounded-[3.5rem] overflow-hidden group shadow-2xl">
+            {/* Hero Background Image */}
+            <img 
+              src="https://media.ouest-france.fr/v1/pictures/MjAyNDAxYzNkNDI2ZDA3Nzc3MmM2YWJlMWQ2ZTliM2ZlZDE2NWM?width=1260&height=708&focuspoint=50%2C25&cropresize=1&client_id=bpeditorial&sign=dbb5d421e82e0d588a936336644a14f3c636a160d7a28215ea880314c7de4df7" 
+              alt="Artisan en vélos cargo à Angers" 
+              className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-[2000ms] group-hover:scale-105"
+              referrerPolicy="no-referrer"
+            />
+            {/* Overlay - deeper gradient for text legibility, but allowing the bike to show on the right */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-[#141414]/40 to-transparent" />
+            
+            <div className="relative z-10 h-full flex flex-col justify-center px-8 md:px-16 max-w-4xl">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="px-4 py-1.5 bg-[#5A5A40] text-white rounded-full text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em]">
+                    Angers Transition Durable
+                  </span>
+                  <div className="h-px w-12 bg-white/30 hidden sm:block" />
+                  <span className="text-white/40 text-[10px] md:text-[11px] font-bold uppercase tracking-widest hidden sm:block">
+                    Eco-Logistique
+                  </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-[#5A5A40] rounded-full" />
-                  <span>8x moins coûteux</span>
+                
+                <h2 className="text-4xl md:text-7xl font-serif italic mb-8 leading-[0.9] text-white tracking-tight">
+                  L'artisanat <br />
+                  <span className="text-[#A5A58D]">à propulsion humaine.</span>
+                </h2>
+                
+                <p className="text-white/70 text-base md:text-xl mb-12 leading-relaxed max-w-xl">
+                  Découvrez la nouvelle génération d'artisans angevins. Plus proches, plus réactifs et 100% décarbonés, ils réinventent le service en ville au guidon de leurs cargos.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+                  <button 
+                    onClick={() => {
+                      const el = document.getElementById('search-input');
+                      el?.focus();
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                    className="px-10 py-5 bg-white text-[#141414] rounded-2xl font-bold uppercase tracking-widest hover:bg-[#F5F5F0] transition-all hover:scale-105 active:scale-95 shadow-2xl flex items-center gap-3"
+                  >
+                    Trouver un artisan
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="flex -space-x-3">
+                      {[1,2,3,4].map(i => (
+                        <img 
+                          key={i}
+                          src={`https://i.pravatar.cc/100?img=${i+20}`} 
+                          className="w-10 h-10 rounded-full border-2 border-[#141414] object-cover bg-white"
+                          referrerPolicy="no-referrer"
+                          alt="Artisan"
+                        />
+                      ))}
+                      <div className="w-10 h-10 rounded-full border-2 border-[#141414] bg-[#5A5A40] flex items-center justify-center text-white text-[10px] font-bold">
+                        +30
+                      </div>
+                    </div>
+                    <div className="text-white/60 text-[10px] font-bold uppercase tracking-widest leading-tight">
+                      Rejoignez le <br /> mouvement local
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-[#5A5A40] rounded-full" />
-                  <span>Zéro émission</span>
-                </div>
-              </div>
+              </motion.div>
             </div>
             
-            {/* Abstract Bike Ornament */}
-            <div className="absolute top-0 right-0 w-1/2 h-full opacity-10 pointer-events-none hidden lg:block">
-              <Bike className="w-full h-full transform translate-x-1/4 -translate-y-1/4 rotate-12" />
-            </div>
+            {/* Scroll Indicator */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5 }}
+              className="absolute bottom-10 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-3 text-white/30"
+            >
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] rotate-90 mb-4 origin-left">Scroll</span>
+            </motion.div>
           </div>
         </section>
 
         {/* Impact Dashboard */}
-        <section className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-6 rounded-3xl border border-[#141414]/5 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-[#5A5A40]/10 rounded-xl text-[#5A5A40]">
-                  <Users className="w-5 h-5" />
+        <section className="mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div 
+              whileHover={{ y: -5 }}
+              className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 shadow-xl shadow-[#141414]/5"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 bg-amber-50 rounded-2xl text-amber-700">
+                  <Users className="w-6 h-6" />
                 </div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/40">Le Réseau</h4>
+                <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#141414]/40">Le Réseau</h4>
               </div>
-              <p className="text-3xl font-mono font-bold">30</p>
-              <p className="text-xs text-[#141414]/60 mt-1">Entreprises dans l'association "Les Boîtes à Vélo"</p>
-            </div>
+              <p className="text-4xl font-serif italic mb-2">32</p>
+              <p className="text-xs text-[#141414]/60 leading-relaxed font-medium">Artisans certifiés "Boîtes à Vélo" sur Angers</p>
+            </motion.div>
 
-            <div className="bg-white p-6 rounded-3xl border border-[#141414]/5 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-green-100 rounded-xl text-green-700">
-                  <TrendingDown className="w-5 h-5" />
+            <motion.div 
+              whileHover={{ y: -5 }}
+              className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 shadow-xl shadow-[#141414]/5"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-700">
+                  <TrendingDown className="w-6 h-6" />
                 </div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/40">Impact Carbone</h4>
+                <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#141414]/40">Impact CO2</h4>
               </div>
-              <p className="text-3xl font-mono font-bold">28x</p>
-              <p className="text-xs text-[#141414]/60 mt-1">Moins d'émissions qu'un véhicule utilitaire classique</p>
-            </div>
+              <p className="text-4xl font-serif italic mb-2">-92%</p>
+              <p className="text-xs text-[#141414]/60 leading-relaxed font-medium">D'émissions par rapport à un utilitaire diesel</p>
+            </motion.div>
 
-            <div className="bg-white p-6 rounded-3xl border border-[#141414]/5 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-blue-100 rounded-xl text-blue-700">
-                  <X className="w-5 h-5" />
+            <motion.div 
+              whileHover={{ y: -5 }}
+              className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 shadow-xl shadow-[#141414]/5"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 bg-sky-50 rounded-2xl text-sky-700">
+                  <Leaf className="w-6 h-6" />
                 </div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/40">Décongestion</h4>
+                <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#141414]/40">Qualité d'air</h4>
               </div>
-              <p className="text-3xl font-mono font-bold">-7</p>
-              <p className="text-xs text-[#141414]/60 mt-1">Camions en moins chaque jour dans le centre-ville</p>
-            </div>
+              <p className="text-4xl font-serif italic mb-2">Pure</p>
+              <p className="text-xs text-[#141414]/60 leading-relaxed font-medium">Zéro oxyde d'azote rejeté lors de chaque intervention</p>
+            </motion.div>
 
-            <div className="bg-[#5A5A40] p-6 rounded-3xl text-white shadow-lg shadow-[#5A5A40]/20">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-white/20 rounded-xl text-white">
-                  <Trophy className="w-5 h-5" />
+            <motion.div 
+              whileHover={{ y: -5 }}
+              className="bg-[#5A5A40] p-8 rounded-[2rem] text-white shadow-2xl shadow-[#5A5A40]/30 relative overflow-hidden"
+            >
+              <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 bg-white/20 rounded-2xl text-white">
+                    <Trophy className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/50">Angers 2025</h4>
                 </div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/60">Trophée 2025</h4>
+                <p className="text-xl font-bold leading-tight mb-2">Ville de Demain</p>
+                <p className="text-xs text-white/70 leading-relaxed">Lauréat de l'appel à projets "Mobilités Durables"</p>
               </div>
-              <p className="text-xl font-bold leading-tight">Initiative Économie Circulaire</p>
-              <p className="text-xs text-white/70 mt-1">Remporté par l'Atelier Cobi pour Angers Loire Métropole</p>
-            </div>
+              <Bike className="absolute -bottom-8 -right-8 w-32 h-32 text-white/5 rotate-12" />
+            </motion.div>
           </div>
         </section>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide">
-          <div className="flex items-center gap-2 mr-2 text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 shrink-0">
-            <Filter className="w-3 h-3" />
-            <span className="hidden sm:inline">Filtrer</span>
+        {/* Filters & Discovery */}
+        <div className="mb-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 border-b border-[#141414]/10 pb-8">
+            <div>
+              <h3 className="text-2xl font-serif italic mb-2">Explorez les talents locaux</h3>
+              <p className="text-sm text-[#141414]/60">Sélectionnez une catégorie pour découvrir vos futurs partenaires.</p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                className={`px-6 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
+                  showFavoritesOnly 
+                  ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' 
+                  : 'bg-white text-[#141414]/60 hover:bg-[#141414]/5 border border-[#141414]/10'
+                }`}
+              >
+                <Heart className={`w-3.5 h-3.5 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                Mes Favoris
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-              className={`px-5 py-2 rounded-full text-[12px] font-medium transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-                showFavoritesOnly 
-                ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' 
-                : 'bg-white text-[#141414]/60 hover:bg-[#141414]/5 border border-[#141414]/10'
-              }`}
-            >
-              <Heart className={`w-3.5 h-3.5 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-              Favoris
-            </button>
+
+          <div className="flex items-center gap-3 overflow-x-auto pb-4 scrollbar-hide">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-5 py-2 rounded-full text-[12px] font-medium transition-all whitespace-nowrap shrink-0 ${
+                className={`px-8 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-3 ${
                   selectedCategory === cat 
-                  ? 'bg-[#5A5A40] text-[#F5F5F0] shadow-lg shadow-[#5A5A40]/20' 
-                  : 'bg-white text-[#141414]/60 hover:bg-[#141414]/5 border border-[#141414]/10'
+                  ? 'bg-[#5A5A40] text-[#F5F5F0] shadow-2xl shadow-[#5A5A40]/30 scale-105' 
+                  : 'bg-white text-[#141414]/60 hover:bg-[#141414]/5 border border-[#141414]/10 hover:border-[#5A5A40]/30'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  {cat !== 'Tous' && CATEGORY_ICONS[cat as Category]}
-                  {cat}
-                </div>
+                {cat !== 'Tous' && CATEGORY_ICONS[cat as Category]}
+                {cat}
               </button>
             ))}
           </div>

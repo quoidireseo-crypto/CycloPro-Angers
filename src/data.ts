@@ -122,6 +122,50 @@ export const entrepreneurs: Entrepreneur[] = [
     }
   },
   {
+    id: 'le-xylocope',
+    name: 'Le Xylocope Écohabitat',
+    category: 'Menuiserie',
+    siret: '890 222 333 00044',
+    description: 'Menuisier Charpentier Urbain. Spécialiste de l\'aménagement bois et de l\'éco-construction circulant en vélo-cargo lourd.',
+    longDescription: 'Le Xylocope est une entreprise de menuiserie qui intervient au cœur d\'Angers pour des projets d\'aménagement intérieur et de charpente légère. En utilisant des vélos-cargos Douze Cycles, l\'équipe transporte ses outils et ses matériaux sans aucune émission sonore ni pollution atmosphérique.',
+    location: 'Angers et proximité',
+    coordinates: [47.4720, -0.5500],
+    image: 'https://images.unsplash.com/photo-1590674154471-1678ee20a1ad?q=80&w=800&auto=format&fit=crop',
+    co2Saved: 680,
+    contact: {
+      email: 'contact@lexylocope.fr',
+      website: 'http://lexylocope.fr'
+    }
+  },
+  {
+    id: 'velectricite',
+    name: 'Velectricité',
+    category: 'Électricité',
+    siret: '930 111 222 00033',
+    description: 'Artisan électricien local à vélo. Installation, dépannage et maintenance électrique décarbonée.',
+    location: 'Quartier Saint-Laud, Angers',
+    coordinates: [47.4650, -0.5580],
+    image: 'https://images.unsplash.com/photo-1621905252507-b35220adcfba?q=80&w=800&auto=format&fit=crop',
+    co2Saved: 390,
+    contact: {
+      phone: '06 70 68 39 07'
+    }
+  },
+  {
+    id: 'plomberie-bicyclette',
+    name: 'La Plomberie à Bicyclette',
+    category: 'Plomberie',
+    siret: '940 333 444 00022',
+    description: 'Services de plomberie et chauffage avec intervention 100% cyclo-mobile dans l\'agglomération angevine.',
+    location: 'Angers Hypercentre',
+    coordinates: [47.4705, -0.5530],
+    image: 'https://images.unsplash.com/photo-1504148455328-497c5efdf13a?q=80&w=800&auto=format&fit=crop',
+    co2Saved: 510,
+    contact: {
+      phone: '06 10 32 65 27'
+    }
+  },
+  {
     id: 'doutre-collectif',
     name: 'Collectif de la Doutre',
     category: 'Bâtiment',
