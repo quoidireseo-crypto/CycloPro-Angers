@@ -137,6 +137,7 @@ export default function App() {
   const [data, setData] = useState<Entrepreneur[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'Tous'>('Tous');
   const [activeReviewProId, setActiveReviewProId] = useState<string | null>(null);
@@ -171,14 +172,6 @@ export default function App() {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setIsAuthLoading(false);
-      
-      // If user logs in, check if they are an entrepreneur
-      if (user) {
-        const found = data.find(p => (p as any).ownerId === user.uid);
-        if (found) setLoggedPro(found);
-      } else {
-        setLoggedPro(null);
-      }
     });
 
     const unsubData = onSnapshot(collection(db, 'entrepreneurs'), (snapshot) => {
@@ -195,7 +188,17 @@ export default function App() {
       unsubAuth();
       unsubData();
     };
-  }, [data]);
+  }, []); // Remove data from dependencies
+
+  // Seperate effect for updating loggedPro when data or user changes
+  useEffect(() => {
+    if (currentUser && data.length > 0) {
+      const found = data.find(p => (p as any).ownerId === currentUser.uid);
+      if (found) setLoggedPro(found);
+    } else if (!currentUser) {
+      setLoggedPro(null);
+    }
+  }, [currentUser, data]);
 
   useEffect(() => {
     localStorage.setItem('angers_artisans_favs', JSON.stringify(favorites));
@@ -390,19 +393,41 @@ export default function App() {
                   
                         <div className="space-y-4">
                     {!currentUser ? (
-                      <button 
-                        onClick={async () => {
-                          try {
-                            await signInWithGoogle();
-                          } catch (error) {
-                            alert("Erreur de connexion Google.");
-                          }
-                        }}
-                        className="w-full py-4 bg-white border border-[#141414]/10 rounded-xl font-bold uppercase tracking-widest hover:bg-[#141414]/5 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-sm"
-                      >
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
-                        Continuer avec Google
-                      </button>
+                      <div className="space-y-4">
+                        <button 
+                          onClick={async () => {
+                            setIsLoggingIn(true);
+                            try {
+                              await signInWithGoogle();
+                            } catch (error: any) {
+                              console.error("Login error:", error);
+                              if (error.code === 'auth/popup-blocked') {
+                                alert("Le popup de connexion a été bloqué par votre navigateur. Veuillez ouvrir l'application dans un nouvel onglet ou autoriser les popups.");
+                              } else {
+                                alert("Erreur de connexion Google : " + (error.message || "Erreur inconnue"));
+                              }
+                            } finally {
+                              setIsLoggingIn(false);
+                            }
+                          }}
+                          disabled={isLoggingIn}
+                          className="w-full py-4 bg-white border border-[#141414]/10 rounded-xl font-bold uppercase tracking-widest hover:bg-[#141414]/5 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-sm disabled:opacity-50"
+                        >
+                          {isLoggingIn ? (
+                            <div className="w-5 h-5 border-2 border-[#141414]/20 border-t-[#141414] rounded-full animate-spin" />
+                          ) : (
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+                          )}
+                          {isLoggingIn ? "Connexion..." : "Continuer avec Google"}
+                        </button>
+                        
+                        <div className="bg-[#5A5A40]/5 border border-[#5A5A40]/10 p-4 rounded-2xl flex items-start gap-3">
+                          <ExternalLink className="w-4 h-4 text-[#5A5A40] shrink-0 mt-0.5" />
+                          <p className="text-[10px] text-[#5A5A40]/80 font-medium leading-relaxed uppercase tracking-wider">
+                            Si la connexion ne s'ouvre pas, ouvrez l'application dans un <a href={window.location.href} target="_blank" rel="noopener noreferrer" className="underline font-bold">nouvel onglet</a>.
+                          </p>
+                        </div>
+                      </div>
                     ) : (
                       <>
                         <div className="p-4 bg-[#5A5A40]/10 rounded-xl mb-4">
