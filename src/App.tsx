@@ -88,6 +88,9 @@ export default function App() {
   const [activeReviewProId, setActiveReviewProId] = useState<string | null>(null);
   const [selectedPro, setSelectedPro] = useState<Entrepreneur | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [loggedPro, setLoggedPro] = useState<Entrepreneur | null>(null);
+  const [loginForm, setLoginForm] = useState({ name: '', siret: '' });
   const [newReview, setNewReview] = useState({ userName: '', rating: 5, comment: '' });
   const [registrationForm, setRegistrationForm] = useState({
     name: '',
@@ -200,6 +203,12 @@ export default function App() {
               >
                 Inscrire
               </button>
+              <button 
+                onClick={() => setIsDashboardOpen(true)}
+                className="md:hidden ml-2 p-2 bg-white border border-[#141414]/10 rounded-full text-[#141414]"
+              >
+                <Users className="w-4 h-4" />
+              </button>
             </div>
 
             <div className="flex items-center gap-3 w-full md:w-auto">
@@ -216,6 +225,13 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
+                <button 
+                  onClick={() => setIsDashboardOpen(true)}
+                  className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-[#141414]/10 text-[#141414] rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#141414]/5 transition-colors whitespace-nowrap"
+                >
+                  <Users className="w-4 h-4" />
+                  Mon Espace
+                </button>
                 <button 
                   onClick={() => setIsRegistering(true)}
                   className="hidden md:block px-4 py-2 bg-[#141414] text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-colors whitespace-nowrap"
@@ -249,7 +265,302 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Modal for detailed profile */}
+        {/* Dashboard Modal */}
+        <AnimatePresence>
+          {isDashboardOpen && (
+            <div className="fixed inset-0 z-[2000] flex items-center justify-center p-0 md:p-6">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-[#141414]/90 backdrop-blur-md"
+                onClick={() => {
+                  if (!loggedPro) setIsDashboardOpen(false);
+                }}
+              />
+              
+              {!loggedPro ? (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="relative w-full max-w-md bg-[#F5F5F0] rounded-[2rem] p-8 shadow-2xl mx-4"
+                >
+                  <button 
+                    onClick={() => setIsDashboardOpen(false)}
+                    className="absolute top-6 right-6 p-2 hover:bg-[#141414]/5 rounded-full"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                  <div className="text-center mb-8">
+                    <div className="w-16 h-16 bg-[#5A5A40] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Users className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-serif italic">Espace Artisan</h2>
+                    <p className="text-sm text-[#141414]/60 mt-2">Accédez à votre tableau de bord de gestion.</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Entrez le nom de votre entreprise</label>
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm outline-none focus:ring-1 focus:ring-[#5A5A40]"
+                          placeholder="Ex: Le Xylocope, Velectricité..."
+                          value={loginForm.name}
+                          onChange={(e) => setLoginForm({ ...loginForm, name: e.target.value })}
+                        />
+                        {loginForm.name.length > 1 && !loggedPro && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#141414]/10 rounded-xl shadow-xl z-10 max-h-40 overflow-y-auto">
+                            {data
+                              .filter(p => p.name.toLowerCase().includes(loginForm.name.toLowerCase()))
+                              .map(p => (
+                                <button
+                                  key={p.id}
+                                  onClick={() => setLoginForm({ ...loginForm, name: p.name })}
+                                  className="w-full text-left p-3 text-xs hover:bg-[#F5F5F0] border-b border-[#141414]/5 last:border-0"
+                                >
+                                  {p.name}
+                                </button>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="pt-2">
+                      <button 
+                        onClick={() => {
+                          const pro = data.find(p => p.name.toLowerCase() === loginForm.name.toLowerCase());
+                          if (pro) {
+                            setLoggedPro(pro);
+                            setRegistrationForm({
+                              name: pro.name,
+                              category: pro.category,
+                              siret: pro.siret || '',
+                              description: pro.description,
+                              longDescription: pro.longDescription || '',
+                              location: pro.location,
+                              email: pro.contact.email || '',
+                              phone: pro.contact.phone || '',
+                              website: pro.contact.website || '',
+                              image: pro.image || '',
+                              coordinates: pro.coordinates
+                            });
+                          } else {
+                            alert("Identité non reconnue. Essayez 'Le Xylocope' ou 'Velectricité' pour tester.");
+                          }
+                        }}
+                        className="w-full py-4 bg-[#141414] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-all active:scale-95 shadow-xl shadow-[#141414]/20"
+                      >
+                        Accéder à mon espace
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="relative w-full h-full md:h-[90vh] bg-[#F5F5F0] md:rounded-[3rem] overflow-hidden flex flex-col shadow-2xl"
+                >
+                  <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+                    {/* Sidebar */}
+                    <div className="w-full md:w-80 bg-[#141414] text-white p-8 shrink-0 flex flex-col">
+                      <div className="flex items-center gap-3 mb-12">
+                        <div className="bg-[#5A5A40] p-2 rounded-xl">
+                          <Bike className="w-5 h-5" />
+                        </div>
+                        <span className="font-bold tracking-tight uppercase text-xs">Dashboard Artisan</span>
+                      </div>
+                      
+                      <div className="flex flex-col items-center mb-12">
+                        <div className="w-24 h-24 rounded-3xl overflow-hidden mb-4 border-2 border-[#5A5A40]">
+                          <img 
+                            src={loggedPro.image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop"} 
+                            className="w-full h-full object-cover" 
+                            alt={loggedPro.name}
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                        <h3 className="text-xl font-serif italic text-center">{loggedPro.name}</h3>
+                        <p className="text-[10px] text-[#A5A58D] font-bold uppercase tracking-widest mt-2">Bénévole Cyclo</p>
+                      </div>
+
+                      <nav className="space-y-2 flex-1">
+                        <button className="w-full flex items-center gap-3 p-3 bg-[#5A5A40] rounded-xl text-white text-xs font-bold uppercase tracking-widest">
+                          <Users className="w-4 h-4" /> Profil & Édition
+                        </button>
+                        <button className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-white/60 text-xs font-bold uppercase tracking-widest transition-colors">
+                          <MessageSquare className="w-4 h-4" /> Avis Clients ({loggedPro.reviews?.length || 0})
+                        </button>
+                        <button className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-white/60 text-xs font-bold uppercase tracking-widest transition-colors">
+                          <TrendingDown className="w-4 h-4" /> Stats Impact
+                        </button>
+                      </nav>
+
+                      <button 
+                        onClick={() => {
+                          setLoggedPro(null);
+                          setLoginForm({ name: '', siret: '' });
+                        }}
+                        className="mt-auto flex items-center gap-3 p-3 text-red-400 hover:text-red-300 transition-colors text-xs font-bold uppercase tracking-widest"
+                      >
+                        <X className="w-4 h-4" /> Déconnexion
+                      </button>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="flex-1 overflow-y-auto p-8 md:p-12">
+                      <header className="flex justify-between items-center mb-12">
+                        <div>
+                          <h2 className="text-3xl font-serif italic">Gestion de Profil</h2>
+                          <p className="text-sm text-[#141414]/40 mt-1">Personnalisez votre présence sur VéloPro Angers.</p>
+                        </div>
+                        <button 
+                          onClick={() => setIsDashboardOpen(false)}
+                          className="p-3 bg-white border border-[#141414]/10 rounded-2xl hover:bg-[#141414]/5"
+                        >
+                          <Share2 className="w-5 h-5 text-[#141414]/40" />
+                        </button>
+                      </header>
+
+                      <article className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                        <div className="space-y-8">
+                          <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-6">
+                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#A5A58D]">Informations Générales</h4>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Nom de l'artisan</label>
+                                <input 
+                                  value={registrationForm.name}
+                                  onChange={(e) => setRegistrationForm({...registrationForm, name: e.target.value})}
+                                  className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Localisation</label>
+                                <input 
+                                  value={registrationForm.location}
+                                  onChange={(e) => setRegistrationForm({...registrationForm, location: e.target.value})}
+                                  className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Description Courte</label>
+                                <textarea 
+                                  value={registrationForm.description}
+                                  onChange={(e) => setRegistrationForm({...registrationForm, description: e.target.value})}
+                                  className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm h-20 resize-none focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="bg-white p-6 rounded-3xl border border-[#141414]/5 text-center">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 block mb-2">Vues</span>
+                              <span className="text-2xl font-bold">1,2k</span>
+                            </div>
+                            <div className="bg-white p-6 rounded-3xl border border-[#141414]/5 text-center">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 block mb-2">Favoris</span>
+                              <span className="text-2xl font-bold">{Math.floor(Math.random() * 50) + 10}</span>
+                            </div>
+                            <div className="bg-white p-6 rounded-3xl border border-[#141414]/5 text-center">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 block mb-2">Avis</span>
+                              <span className="text-2xl font-bold">{loggedPro.reviews?.length || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-8">
+                          <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-6">
+                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#A5A58D]">Biographie Détaillée</h4>
+                            <textarea 
+                              value={registrationForm.longDescription}
+                              onChange={(e) => setRegistrationForm({...registrationForm, longDescription: e.target.value})}
+                              placeholder="Racontez votre histoire..."
+                              className="w-full bg-[#F5F5F0] border-none rounded-xl p-4 text-sm h-48 resize-none focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                            />
+                          </div>
+
+                          <div className="bg-[#141414] p-8 rounded-[2rem] text-white">
+                            <div className="flex items-center gap-4 mb-6">
+                              <div className="p-3 bg-[#5A5A40] rounded-2xl text-white">
+                                <Leaf className="w-5 h-5" />
+                              </div>
+                              <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Éco-Score Partenaire</h4>
+                            </div>
+                            <div className="flex justify-between items-end">
+                              <div>
+                                <span className="text-5xl font-serif italic">{loggedPro.co2Saved || 120}</span>
+                                <span className="text-xs font-bold uppercase tracking-widest ml-2 text-white/40">kg CO2 Économisés</span>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-[#A5A58D]">Objectif 2025</p>
+                                <p className="text-sm font-bold">85% Complété</p>
+                              </div>
+                            </div>
+                            <div className="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
+                              <div className="h-full bg-[#5A5A40] w-4/5 rounded-full" />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-4">
+                            <button 
+                              onClick={() => {
+                                const updatedPro: Entrepreneur = {
+                                  ...loggedPro,
+                                  name: registrationForm.name,
+                                  description: registrationForm.description,
+                                  longDescription: registrationForm.longDescription,
+                                  location: registrationForm.location,
+                                  image: registrationForm.image,
+                                  category: registrationForm.category,
+                                  contact: {
+                                    ...loggedPro.contact,
+                                    email: registrationForm.email,
+                                    phone: registrationForm.phone,
+                                    website: registrationForm.website
+                                  }
+                                };
+                                setData(prev => prev.map(p => p.id === loggedPro.id ? updatedPro : p));
+                                setLoggedPro(updatedPro);
+                                // Visual feedback for saving
+                                const btn = document.getElementById('save-btn');
+                                if (btn) {
+                                  const originalText = btn.innerHTML;
+                                  btn.innerHTML = "Sauvegardé ✓";
+                                  btn.classList.add('bg-green-600');
+                                  setTimeout(() => {
+                                    btn.innerHTML = originalText;
+                                    btn.classList.remove('bg-green-600');
+                                  }, 2000);
+                                }
+                              }}
+                              id="save-btn"
+                              className="flex-1 py-4 bg-[#5A5A40] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-all active:scale-95 shadow-xl shadow-[#5A5A40]/20"
+                            >
+                              Enregistrer les modifications
+                            </button>
+                            <button 
+                              onClick={() => setIsDashboardOpen(false)}
+                              className="px-8 py-4 bg-white border border-[#141414]/10 rounded-2xl font-bold uppercase tracking-widest text-[#141414]/40 hover:bg-[#141414]/5 transition-colors"
+                            >
+                              Fermer
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {selectedPro && (
             <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-6">
