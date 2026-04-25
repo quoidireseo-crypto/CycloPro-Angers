@@ -102,6 +102,7 @@ export default function App() {
     image: '',
     coordinates: [47.4710, -0.5520] as [number, number]
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -419,22 +420,30 @@ export default function App() {
                         <input 
                           type="text" 
                           placeholder="Ex: Sicle Plomberie"
-                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                          className={`w-full bg-white border ${formErrors.name ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-colors`}
                           value={registrationForm.name}
-                          onChange={(e) => setRegistrationForm({ ...registrationForm, name: e.target.value })}
+                          onChange={(e) => {
+                            setRegistrationForm({ ...registrationForm, name: e.target.value });
+                            if (formErrors.name) setFormErrors(prev => ({ ...prev, name: '' }));
+                          }}
                         />
+                        {formErrors.name && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.name}</p>}
                       </div>
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Catégorie *</label>
                         <select 
-                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none appearance-none"
+                          className={`w-full bg-white border ${formErrors.category ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none appearance-none transition-colors`}
                           value={registrationForm.category}
-                          onChange={(e) => setRegistrationForm({ ...registrationForm, category: e.target.value as Category })}
+                          onChange={(e) => {
+                            setRegistrationForm({ ...registrationForm, category: e.target.value as Category });
+                            if (formErrors.category) setFormErrors(prev => ({ ...prev, category: '' }));
+                          }}
                         >
                           {categories.filter(c => c !== 'Tous').map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
                           ))}
                         </select>
+                        {formErrors.category && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.category}</p>}
                       </div>
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Numéro SIRET</label>
@@ -451,10 +460,14 @@ export default function App() {
                         <input 
                           type="text" 
                           placeholder="Ex: Quartier de la Doutre, Angers"
-                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                          className={`w-full bg-white border ${formErrors.location ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-colors`}
                           value={registrationForm.location}
-                          onChange={(e) => setRegistrationForm({ ...registrationForm, location: e.target.value })}
+                          onChange={(e) => {
+                            setRegistrationForm({ ...registrationForm, location: e.target.value });
+                            if (formErrors.location) setFormErrors(prev => ({ ...prev, location: '' }));
+                          }}
                         />
+                        {formErrors.location && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.location}</p>}
                       </div>
                     </div>
 
@@ -506,10 +519,14 @@ export default function App() {
                     <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Description courte *</label>
                     <textarea 
                       placeholder="Présentez votre activité en une phrase..."
-                      className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none h-20 resize-none"
+                      className={`w-full bg-white border ${formErrors.description ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none h-20 resize-none transition-colors`}
                       value={registrationForm.description}
-                      onChange={(e) => setRegistrationForm({ ...registrationForm, description: e.target.value })}
+                      onChange={(e) => {
+                        setRegistrationForm({ ...registrationForm, description: e.target.value });
+                        if (formErrors.description) setFormErrors(prev => ({ ...prev, description: '' }));
+                      }}
                     />
+                    {formErrors.description && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.description}</p>}
                   </div>
 
                   <div className="mt-6">
@@ -525,10 +542,17 @@ export default function App() {
                   <div className="mt-8 flex gap-4">
                     <button 
                       onClick={() => {
-                        if (!registrationForm.name || !registrationForm.description || !registrationForm.location) {
-                          alert('Veuillez remplir les champs obligatoires (*)');
+                        const errors: Record<string, string> = {};
+                        if (!registrationForm.name.trim()) errors.name = "Nom requis";
+                        if (!registrationForm.category) errors.category = "Catégorie requise";
+                        if (!registrationForm.description.trim()) errors.description = "Description requise";
+                        if (!registrationForm.location.trim()) errors.location = "Localisation requise";
+
+                        if (Object.keys(errors).length > 0) {
+                          setFormErrors(errors);
                           return;
                         }
+
                         const newPro: Entrepreneur = {
                           id: Date.now().toString(),
                           name: registrationForm.name,
@@ -548,6 +572,7 @@ export default function App() {
                         };
                         setData([newPro, ...data]);
                         setIsRegistering(false);
+                        setFormErrors({});
                         setRegistrationForm({
                           name: '',
                           category: 'Paysage',
@@ -567,7 +592,10 @@ export default function App() {
                       Valider mon inscription
                     </button>
                     <button 
-                      onClick={() => setIsRegistering(false)}
+                      onClick={() => {
+                        setIsRegistering(false);
+                        setFormErrors({});
+                      }}
                       className="px-8 py-4 bg-white border border-[#141414]/10 rounded-2xl font-bold uppercase tracking-widest hover:bg-red-50 text-red-500 transition-colors"
                     >
                       Annuler
