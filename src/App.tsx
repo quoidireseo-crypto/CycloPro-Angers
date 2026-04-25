@@ -398,13 +398,18 @@ export default function App() {
                           onClick={async () => {
                             setIsLoggingIn(true);
                             try {
+                              // Force a new window if we detect we are in an iframe
+                              if (window.self !== window.top) {
+                                window.open(window.location.href, '_blank');
+                                return;
+                              }
                               await signInWithGoogle();
                             } catch (error: any) {
                               console.error("Login error:", error);
-                              if (error.code === 'auth/popup-blocked') {
-                                alert("Le popup de connexion a été bloqué par votre navigateur. Veuillez ouvrir l'application dans un nouvel onglet ou autoriser les popups.");
+                              if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+                                alert("Le popup a été bloqué. Cliquez sur le lien ci-dessous pour ouvrir l'app en plein écran.");
                               } else {
-                                alert("Erreur de connexion Google : " + (error.message || "Erreur inconnue"));
+                                alert("Erreur de connexion : " + (error.message || "Erreur inconnue"));
                               }
                             } finally {
                               setIsLoggingIn(false);
@@ -421,11 +426,22 @@ export default function App() {
                           {isLoggingIn ? "Connexion..." : "Continuer avec Google"}
                         </button>
                         
-                        <div className="bg-[#5A5A40]/5 border border-[#5A5A40]/10 p-4 rounded-2xl flex items-start gap-3">
-                          <ExternalLink className="w-4 h-4 text-[#5A5A40] shrink-0 mt-0.5" />
-                          <p className="text-[10px] text-[#5A5A40]/80 font-medium leading-relaxed uppercase tracking-wider">
-                            Si la connexion ne s'ouvre pas, ouvrez l'application dans un <a href={window.location.href} target="_blank" rel="noopener noreferrer" className="underline font-bold">nouvel onglet</a>.
+                        <div className="bg-[#5A5A40]/10 border border-[#5A5A40]/20 p-5 rounded-2xl">
+                          <div className="flex items-start gap-3 mb-3">
+                            <ExternalLink className="w-4 h-4 text-[#5A5A40] shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-[#5A5A40] font-bold uppercase tracking-wider">Instructions de connexion</p>
+                          </div>
+                          <p className="text-xs text-[#5A5A40]/80 leading-relaxed mb-4">
+                            Les navigateurs bloquent souvent la connexion dans cet aperçu. Pour un accès complet :
                           </p>
+                          <a 
+                            href={window.location.href} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="block w-full py-3 bg-[#5A5A40] text-white text-center rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-colors"
+                          >
+                            Ouvrir dans un nouvel onglet
+                          </a>
                         </div>
                       </div>
                     ) : (
