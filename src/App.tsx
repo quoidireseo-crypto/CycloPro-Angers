@@ -43,8 +43,60 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { entrepreneurs } from './data';
+import { auth, db, signInWithGoogle } from './firebase';
+import { 
+  collection, 
+  query, 
+  onSnapshot, 
+  setDoc, 
+  doc, 
+  getDocs, 
+  updateDoc, 
+  deleteDoc,
+  arrayUnion,
+  serverTimestamp,
+  Timestamp
+} from 'firebase/firestore';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { entrepreneurs as initialData } from './data';
 import { Category, Entrepreneur, Review } from './types';
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
 
 // Fix for Leaflet default icon issues in React
 // @ts-ignore
@@ -82,7 +134,9 @@ function StarRating({ rating, size = 12 }: { rating: number, size?: number }) {
 }
 
 export default function App() {
-  const [data, setData] = useState<Entrepreneur[]>(entrepreneurs);
+  const [data, setData] = useState<Entrepreneur[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'Tous'>('Tous');
   const [activeReviewProId, setActiveReviewProId] = useState<string | null>(null);
@@ -90,7 +144,7 @@ export default function App() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [loggedPro, setLoggedPro] = useState<Entrepreneur | null>(null);
-  const [loginForm, setLoginForm] = useState({ name: '', siret: '' });
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [newReview, setNewReview] = useState({ userName: '', rating: 5, comment: '' });
   const [registrationForm, setRegistrationForm] = useState({
     name: '',
@@ -112,6 +166,36 @@ export default function App() {
     const saved = localStorage.getItem('angers_artisans_favs');
     return saved ? JSON.parse(saved) : [];
   });
+
+  useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsAuthLoading(false);
+      
+      // If user logs in, check if they are an entrepreneur
+      if (user) {
+        const found = data.find(p => (p as any).ownerId === user.uid);
+        if (found) setLoggedPro(found);
+      } else {
+        setLoggedPro(null);
+      }
+    });
+
+    const unsubData = onSnapshot(collection(db, 'entrepreneurs'), (snapshot) => {
+      const proList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Entrepreneur[];
+      setData(proList);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'entrepreneurs');
+    });
+
+    return () => {
+      unsubAuth();
+      unsubData();
+    };
+  }, [data]);
 
   useEffect(() => {
     localStorage.setItem('angers_artisans_favs', JSON.stringify(favorites));
@@ -157,7 +241,12 @@ export default function App() {
 
   const categories: (Category | 'Tous')[] = ['Tous', 'Paysage', 'Plomberie', 'Menuiserie', 'Électricité', 'Livraison', 'Bâtiment', 'Réparation', 'Solidarité', 'Logistique'];
 
-  const handleAddReview = (proId: string) => {
+   const handleAddReview = async (proId: string) => {
+    if (!currentUser) {
+      alert("Vous devez être connecté pour laisser un avis.");
+      setIsDashboardOpen(true);
+      return;
+    }
     if (!newReview.userName || !newReview.comment) return;
 
     const review: Review = {
@@ -165,21 +254,20 @@ export default function App() {
       userName: newReview.userName,
       rating: newReview.rating,
       comment: newReview.comment,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString()
     };
 
-    setData(prev => prev.map(pro => {
-      if (pro.id === proId) {
-        return {
-          ...pro,
-          reviews: [review, ...(pro.reviews || [])]
-        };
-      }
-      return pro;
-    }));
-
-    setNewReview({ userName: '', rating: 5, comment: '' });
-    setActiveReviewProId(null);
+    const path = `entrepreneurs/${proId}`;
+    try {
+      await updateDoc(doc(db, path), {
+        reviews: arrayUnion(review),
+        updatedAt: serverTimestamp()
+      });
+      setNewReview({ userName: '', rating: 5, comment: '' });
+      setActiveReviewProId(null);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
   };
 
   return (
@@ -300,62 +388,85 @@ export default function App() {
                     <p className="text-sm text-[#141414]/60 mt-2">Accédez à votre tableau de bord de gestion.</p>
                   </div>
                   
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Entrez le nom de votre entreprise</label>
-                      <div className="relative">
-                        <input 
-                          type="text" 
-                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm outline-none focus:ring-1 focus:ring-[#5A5A40]"
-                          placeholder="Ex: Le Xylocope, Velectricité..."
-                          value={loginForm.name}
-                          onChange={(e) => setLoginForm({ ...loginForm, name: e.target.value })}
-                        />
-                        {loginForm.name.length > 1 && !loggedPro && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#141414]/10 rounded-xl shadow-xl z-10 max-h-40 overflow-y-auto">
-                            {data
-                              .filter(p => p.name.toLowerCase().includes(loginForm.name.toLowerCase()))
-                              .map(p => (
-                                <button
-                                  key={p.id}
-                                  onClick={() => setLoginForm({ ...loginForm, name: p.name })}
-                                  className="w-full text-left p-3 text-xs hover:bg-[#F5F5F0] border-b border-[#141414]/5 last:border-0"
-                                >
-                                  {p.name}
-                                </button>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="pt-2">
+                        <div className="space-y-4">
+                    {!currentUser ? (
                       <button 
-                        onClick={() => {
-                          const pro = data.find(p => p.name.toLowerCase() === loginForm.name.toLowerCase());
-                          if (pro) {
-                            setLoggedPro(pro);
-                            setRegistrationForm({
-                              name: pro.name,
-                              category: pro.category,
-                              siret: pro.siret || '',
-                              description: pro.description,
-                              longDescription: pro.longDescription || '',
-                              location: pro.location,
-                              email: pro.contact.email || '',
-                              phone: pro.contact.phone || '',
-                              website: pro.contact.website || '',
-                              image: pro.image || '',
-                              coordinates: pro.coordinates
-                            });
-                          } else {
-                            alert("Identité non reconnue. Essayez 'Le Xylocope' ou 'Velectricité' pour tester.");
+                        onClick={async () => {
+                          try {
+                            await signInWithGoogle();
+                          } catch (error) {
+                            alert("Erreur de connexion Google.");
                           }
                         }}
-                        className="w-full py-4 bg-[#141414] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-all active:scale-95 shadow-xl shadow-[#141414]/20"
+                        className="w-full py-4 bg-white border border-[#141414]/10 rounded-xl font-bold uppercase tracking-widest hover:bg-[#141414]/5 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-sm"
                       >
-                        Accéder à mon espace
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+                        Continuer avec Google
                       </button>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="p-4 bg-[#5A5A40]/10 rounded-xl mb-4">
+                          <p className="text-xs font-bold uppercase text-[#5A5A40] mb-1">Session active</p>
+                          <p className="text-sm font-medium">{currentUser.email}</p>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            const pro = data.find(p => (p as any).ownerId === currentUser.uid);
+                            if (pro) {
+                              setLoggedPro(pro);
+                              setRegistrationForm({
+                                name: pro.name,
+                                category: pro.category,
+                                siret: pro.siret || '',
+                                description: pro.description,
+                                longDescription: pro.longDescription || '',
+                                location: pro.location,
+                                email: pro.contact.email || '',
+                                phone: pro.contact.phone || '',
+                                website: pro.contact.website || '',
+                                image: pro.image || '',
+                                coordinates: pro.coordinates
+                              });
+                            } else {
+                              alert("Aucun profil artisan lié à ce compte Google. Veuillez vous inscrire d'abord.");
+                            }
+                          }}
+                          className="w-full py-4 bg-[#141414] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-all active:scale-95 shadow-xl shadow-[#141414]/20"
+                        >
+                          Accéder à mon tableau de bord
+                        </button>
+
+                        {data.length === 0 && (
+                          <button 
+                            onClick={async () => {
+                              try {
+                                for (const pro of initialData) {
+                                  const proId = pro.id || Date.now().toString() + Math.random().toString(36).substr(2, 5);
+                                  await setDoc(doc(db, 'entrepreneurs', proId), {
+                                    ...pro,
+                                    ownerId: currentUser.uid, // Use current user as temporary owner for demo
+                                    createdAt: serverTimestamp(),
+                                    updatedAt: serverTimestamp()
+                                  });
+                                }
+                                alert("Données de démonstration chargées !");
+                              } catch (error) {
+                                handleFirestoreError(error, OperationType.WRITE, 'entrepreneurs');
+                              }
+                            }}
+                            className="w-full py-3 border border-[#5A5A40] text-[#5A5A40] rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#5A5A40]/5 transition-colors"
+                          >
+                            Charger les données de démo
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => signOut(auth)}
+                          className="w-full py-3 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-4"
+                        >
+                          Se déconnecter de Google
+                        </button>
+                      </>
+                    )}
                   </div>
                 </motion.div>
               ) : (
@@ -401,9 +512,10 @@ export default function App() {
                       </nav>
 
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
+                          await signOut(auth);
+                          setIsDashboardOpen(false);
                           setLoggedPro(null);
-                          setLoginForm({ name: '', siret: '' });
                         }}
                         className="mt-auto flex items-center gap-3 p-3 text-red-400 hover:text-red-300 transition-colors text-xs font-bold uppercase tracking-widest"
                       >
@@ -509,34 +621,39 @@ export default function App() {
 
                           <div className="flex gap-4">
                             <button 
-                              onClick={() => {
-                                const updatedPro: Entrepreneur = {
-                                  ...loggedPro,
-                                  name: registrationForm.name,
-                                  description: registrationForm.description,
-                                  longDescription: registrationForm.longDescription,
-                                  location: registrationForm.location,
-                                  image: registrationForm.image,
-                                  category: registrationForm.category,
-                                  contact: {
-                                    ...loggedPro.contact,
-                                    email: registrationForm.email,
-                                    phone: registrationForm.phone,
-                                    website: registrationForm.website
+                              onClick={async () => {
+                                const path = `entrepreneurs/${loggedPro.id}`;
+                                try {
+                                  const updatedData = {
+                                    name: registrationForm.name,
+                                    description: registrationForm.description,
+                                    longDescription: registrationForm.longDescription,
+                                    location: registrationForm.location,
+                                    image: registrationForm.image,
+                                    category: registrationForm.category,
+                                    contact: {
+                                      ...loggedPro.contact,
+                                      email: registrationForm.email,
+                                      phone: registrationForm.phone,
+                                      website: registrationForm.website
+                                    },
+                                    updatedAt: serverTimestamp()
+                                  };
+                                  await updateDoc(doc(db, path), updatedData);
+                                  
+                                  // Visual feedback for saving
+                                  const btn = document.getElementById('save-btn');
+                                  if (btn) {
+                                    const originalText = btn.innerHTML;
+                                    btn.innerHTML = "Sauvegardé ✓";
+                                    btn.classList.add('bg-green-600');
+                                    setTimeout(() => {
+                                      btn.innerHTML = originalText;
+                                      btn.classList.remove('bg-green-600');
+                                    }, 2000);
                                   }
-                                };
-                                setData(prev => prev.map(p => p.id === loggedPro.id ? updatedPro : p));
-                                setLoggedPro(updatedPro);
-                                // Visual feedback for saving
-                                const btn = document.getElementById('save-btn');
-                                if (btn) {
-                                  const originalText = btn.innerHTML;
-                                  btn.innerHTML = "Sauvegardé ✓";
-                                  btn.classList.add('bg-green-600');
-                                  setTimeout(() => {
-                                    btn.innerHTML = originalText;
-                                    btn.classList.remove('bg-green-600');
-                                  }, 2000);
+                                } catch (error) {
+                                  handleFirestoreError(error, OperationType.UPDATE, path);
                                 }
                               }}
                               id="save-btn"
@@ -852,7 +969,12 @@ export default function App() {
 
                   <div className="mt-8 flex gap-4">
                     <button 
-                      onClick={() => {
+                      onClick={async () => {
+                        if (!currentUser) {
+                          alert("Vous devez être connecté avec Google pour vous inscrire.");
+                          return;
+                        }
+
                         const errors: Record<string, string> = {};
                         if (!registrationForm.name.trim()) errors.name = "Nom requis";
                         if (!registrationForm.category) errors.category = "Catégorie requise";
@@ -864,41 +986,51 @@ export default function App() {
                           return;
                         }
 
-                        const newPro: Entrepreneur = {
-                          id: Date.now().toString(),
-                          name: registrationForm.name,
-                          category: registrationForm.category,
-                          siret: registrationForm.siret,
-                          description: registrationForm.description,
-                          longDescription: registrationForm.longDescription,
-                          location: registrationForm.location,
-                          image: registrationForm.image || undefined,
-                          contact: {
-                            email: registrationForm.email || undefined,
-                            phone: registrationForm.phone || undefined,
-                            website: registrationForm.website || undefined
-                          },
-                          reviews: [],
-                          coordinates: registrationForm.coordinates
-                        };
-                        setData([newPro, ...data]);
-                        setIsRegistering(false);
-                        setFormErrors({});
-                        setRegistrationForm({
-                          name: '',
-                          category: 'Paysage',
-                          siret: '',
-                          description: '',
-                          longDescription: '',
-                          location: '',
-                          email: '',
-                          phone: '',
-                          website: '',
-                          image: '',
-                          coordinates: [47.4710, -0.5520]
-                        });
+                        const proId = Date.now().toString();
+                        const path = `entrepreneurs/${proId}`;
+                        
+                        try {
+                          await setDoc(doc(db, path), {
+                            name: registrationForm.name,
+                            category: registrationForm.category,
+                            siret: registrationForm.siret,
+                            description: registrationForm.description,
+                            longDescription: registrationForm.longDescription,
+                            location: registrationForm.location,
+                            coordinates: registrationForm.coordinates,
+                            image: registrationForm.image || "https://images.unsplash.com/photo-1590674154471-1678ee20a1ad?q=80&w=800&auto=format&fit=crop",
+                            co2Saved: 0,
+                            contact: {
+                              email: registrationForm.email || currentUser.email,
+                              phone: registrationForm.phone,
+                              website: registrationForm.website
+                            },
+                            reviews: [],
+                            ownerId: currentUser.uid,
+                            createdAt: serverTimestamp(),
+                            updatedAt: serverTimestamp()
+                          });
+
+                          setIsRegistering(false);
+                          setFormErrors({});
+                          setRegistrationForm({
+                            name: '',
+                            category: 'Paysage',
+                            siret: '',
+                            description: '',
+                            longDescription: '',
+                            location: '',
+                            email: '',
+                            phone: '',
+                            website: '',
+                            image: '',
+                            coordinates: [47.4710, -0.5520]
+                          });
+                        } catch (error) {
+                          handleFirestoreError(error, OperationType.CREATE, path);
+                        }
                       }}
-                      className="flex-1 py-4 bg-[#5A5A40] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-colors shadow-lg shadow-[#5A5A40]/20"
+                      className="flex-1 py-4 bg-[#141414] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-colors shadow-xl shadow-[#141414]/20"
                     >
                       Valider mon inscription
                     </button>

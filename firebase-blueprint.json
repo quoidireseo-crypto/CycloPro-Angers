@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "entrepreneur": {
+      "title": "Entrepreneur",
+      "description": "An artisan or entrepreneur using cargo bikes in Angers.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string", "enum": ["Paysage", "Maintenance", "Livraison", "Collecte", "Bâtiment", "Alimentaire", "Menuiserie", "Électricité", "Plomberie"] },
+        "siret": { "type": "string" },
+        "description": { "type": "string" },
+        "longDescription": { "type": "string" },
+        "location": { "type": "string" },
+        "coordinates": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+        "image": { "type": "string" },
+        "co2Saved": { "type": "number" },
+        "contact": {
+          "type": "object",
+          "properties": {
+            "email": { "type": "string", "format": "email" },
+            "phone": { "type": "string" },
+            "website": { "type": "string", "format": "uri" }
+          }
+        },
+        "reviews": {
+          "type": "array",
+          "items": { "$ref": "#/entities/review" }
+        },
+        "ownerId": { "type": "string", "description": "UID of the user who owns this profile." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "category", "description", "location"]
+    },
+    "review": {
+      "title": "Review",
+      "description": "A customer review for an entrepreneur.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "number", "minimum": 1, "maximum": 5 },
+        "comment": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userName", "rating", "comment", "date"]
+    }
+  },
+  "firestore": {
+    "/entrepreneurs/{entrepreneurId}": {
+      "schema": "entrepreneur",
+      "description": "Collection of all registered artisans."
+    }
+  }
+}

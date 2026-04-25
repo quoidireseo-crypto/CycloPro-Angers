@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitive Definitions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(data) {
+      return isSignedIn() && data.ownerId == request.auth.uid;
+    }
+
+    // Entrepreneur Validation
+    function isValidEntrepreneur(data) {
+      return data.keys().hasAll(['name', 'category', 'description', 'location']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.category is string && data.category.size() > 0 &&
+             data.description is string && data.description.size() > 0 && data.description.size() <= 500 &&
+             data.location is string && data.location.size() > 0 &&
+             (!('email' in data.contact) || data.contact.email is string) &&
+             (!('co2Saved' in data) || data.co2Saved is number);
+    }
+
+    match /entrepreneurs/{entrepreneurId} {
+      // 8. Secure List Queries
+      // Publicly readable profiles
+      allow get, list: if true;
+
+      // 1. The "Master Gate" & 2. Validation Blueprints
+      allow create: if isSignedIn() && 
+                      isValidId(entrepreneurId) && 
+                      isValidEntrepreneur(incoming()) && 
+                      incoming().ownerId == request.auth.uid &&
+                      incoming().createdAt == request.time &&
+                      incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() && 
+                      isValidId(entrepreneurId) && 
+                      (
+                        // Action: Owner managing their profile
+                        (isOwner(existing()) && 
+                         isValidEntrepreneur(incoming()) &&
+                         incoming().ownerId == existing().ownerId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt == request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'name', 'category', 'siret', 'description', 'longDescription', 
+                           'location', 'coordinates', 'image', 'contact', 'updatedAt'
+                         ])
+                        ) 
+                        ||
+                        // Action: Any signed-in user adding a review
+                        (
+                          incoming().diff(existing()).affectedKeys().hasOnly(['reviews', 'updatedAt']) &&
+                          incoming().updatedAt == request.time
+                        )
+                      );
+
+      allow delete: if isSignedIn() && isValidId(entrepreneurId) && isOwner(existing());
+    }
+  }
+}

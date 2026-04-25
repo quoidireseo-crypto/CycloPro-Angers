@@ -20,6 +20,7 @@ export interface Entrepreneur {
   image?: string;
   co2Saved?: number; // Kg of CO2 saved per year
   reviews?: Review[];
+  ownerId?: string;
   stats?: {
     kgTransported?: number;
     yearsActive?: number;
