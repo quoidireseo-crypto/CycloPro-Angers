@@ -37,13 +37,15 @@ import {
   Facebook,
   Twitter,
   Linkedin,
-  Share2
+  Share2,
+  Camera,
+  LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { auth, db, signInWithGoogle } from './firebase';
+import { auth, db, signInWithGoogle, loginWithEmail, registerWithEmail } from './firebase';
 import { 
   collection, 
   query, 
@@ -57,7 +59,8 @@ import {
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { entrepreneurs as initialData } from './data';
 import { Category, Entrepreneur, Review } from './types';
 
@@ -143,6 +146,7 @@ export default function App() {
   const [activeReviewProId, setActiveReviewProId] = useState<string | null>(null);
   const [selectedPro, setSelectedPro] = useState<Entrepreneur | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isRegisteringDoc, setIsRegisteringDoc] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [loggedPro, setLoggedPro] = useState<Entrepreneur | null>(null);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -155,11 +159,14 @@ export default function App() {
     longDescription: '',
     location: '',
     email: '',
+    password: '',
     phone: '',
     website: '',
     image: '',
     coordinates: [47.4710, -0.5520] as [number, number]
   });
+
+  const [activeTab, setActiveTab] = useState<'profile' | 'messages' | 'stats'>('profile');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -426,6 +433,48 @@ export default function App() {
                           {isLoggingIn ? "Connexion..." : "Continuer avec Google"}
                         </button>
                         
+                        <div className="relative flex py-2 items-center">
+                          <div className="flex-grow border-t border-[#141414]/10"></div>
+                          <span className="flex-shrink-0 mx-4 text-[#141414]/40 text-xs font-bold uppercase">Ou</span>
+                          <div className="flex-grow border-t border-[#141414]/10"></div>
+                        </div>
+
+                        <input 
+                          type="email" 
+                          placeholder="Adresse email"
+                          value={loginForm.email}
+                          onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-4 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                        />
+                        <input 
+                          type="password" 
+                          placeholder="Mot de passe"
+                          value={loginForm.password}
+                          onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-4 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                        />
+                        <button 
+                          onClick={async () => {
+                            if (!loginForm.email || !loginForm.password) {
+                              alert("Veuillez remplir l'email et le mot de passe");
+                              return;
+                            }
+                            setIsLoggingIn(true);
+                            try {
+                              await loginWithEmail(loginForm.email, loginForm.password);
+                            } catch (error: any) {
+                              console.error("Login error:", error);
+                              alert("Erreur de connexion : " + error.message);
+                            } finally {
+                              setIsLoggingIn(false);
+                            }
+                          }}
+                          disabled={isLoggingIn}
+                          className="w-full py-4 bg-[#5A5A40] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-colors disabled:opacity-50"
+                        >
+                          Se connecter avec Email
+                        </button>
+                        
                         <div className="bg-[#5A5A40]/10 border border-[#5A5A40]/20 p-5 rounded-2xl">
                           <div className="flex items-start gap-3 mb-3">
                             <ExternalLink className="w-4 h-4 text-[#5A5A40] shrink-0 mt-0.5" />
@@ -528,27 +577,40 @@ export default function App() {
                       </div>
                       
                       <div className="flex flex-col items-center mb-12">
-                        <div className="w-24 h-24 rounded-3xl overflow-hidden mb-4 border-2 border-[#5A5A40]">
+                        <div className="group relative w-24 h-24 rounded-3xl overflow-hidden mb-4 border-2 border-[#5A5A40] cursor-pointer">
                           <img 
                             src={loggedPro.image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop"} 
-                            className="w-full h-full object-cover" 
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
                             alt={loggedPro.name}
                             referrerPolicy="no-referrer"
                           />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <Camera className="w-6 h-6 text-white" />
+                          </div>
                         </div>
                         <h3 className="text-xl font-serif italic text-center">{loggedPro.name}</h3>
-                        <p className="text-[10px] text-[#A5A58D] font-bold uppercase tracking-widest mt-2">Bénévole Cyclo</p>
+                        <p className="text-[10px] text-[#A5A58D] font-bold uppercase tracking-widest mt-2">{loggedPro.category}</p>
                       </div>
 
                       <nav className="space-y-2 flex-1">
-                        <button className="w-full flex items-center gap-3 p-3 bg-[#5A5A40] rounded-xl text-white text-xs font-bold uppercase tracking-widest">
-                          <Users className="w-4 h-4" /> Profil & Édition
+                        <button 
+                          onClick={() => setActiveTab('profile')}
+                          className={`w-full flex items-center gap-3 p-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'profile' ? 'bg-[#5A5A40] text-white shadow-lg shadow-[#5A5A40]/20' : 'text-white/60 hover:bg-white/5'}`}
+                        >
+                          <Users className="w-4 h-4" /> Mon Profil
                         </button>
-                        <button className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-white/60 text-xs font-bold uppercase tracking-widest transition-colors">
-                          <MessageSquare className="w-4 h-4" /> Avis Clients ({loggedPro.reviews?.length || 0})
+                        <button 
+                          onClick={() => setActiveTab('messages')}
+                          className={`w-full flex items-center gap-3 p-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'messages' ? 'bg-[#5A5A40] text-white shadow-lg shadow-[#5A5A40]/20' : 'text-white/60 hover:bg-white/5'}`}
+                        >
+                          <MessageSquare className="w-4 h-4" /> Messagerie
+                          <span className="ml-auto bg-green-500 w-2 h-2 rounded-full animate-pulse" />
                         </button>
-                        <button className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-white/60 text-xs font-bold uppercase tracking-widest transition-colors">
-                          <TrendingDown className="w-4 h-4" /> Stats Impact
+                        <button 
+                          onClick={() => setActiveTab('stats')}
+                          className={`w-full flex items-center gap-3 p-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'stats' ? 'bg-[#5A5A40] text-white shadow-lg shadow-[#5A5A40]/20' : 'text-white/60 hover:bg-white/5'}`}
+                        >
+                          <TrendingDown className="w-4 h-4" /> Statistiques
                         </button>
                       </nav>
 
@@ -560,7 +622,7 @@ export default function App() {
                         }}
                         className="mt-auto flex items-center gap-3 p-3 text-red-400 hover:text-red-300 transition-colors text-xs font-bold uppercase tracking-widest"
                       >
-                        <X className="w-4 h-4" /> Déconnexion
+                        <LogOut className="w-4 h-4" /> Déconnexion
                       </button>
                     </div>
 
@@ -568,149 +630,256 @@ export default function App() {
                     <div className="flex-1 overflow-y-auto p-8 md:p-12">
                       <header className="flex justify-between items-center mb-12">
                         <div>
-                          <h2 className="text-3xl font-serif italic">Gestion de Profil</h2>
-                          <p className="text-sm text-[#141414]/40 mt-1">Personnalisez votre présence sur VéloPro Angers.</p>
+                          <h2 className="text-3xl font-serif italic">
+                            {activeTab === 'profile' && 'Profil Professionnel'}
+                            {activeTab === 'messages' && 'Messagerie & Contacts'}
+                            {activeTab === 'stats' && 'Impact & Performance'}
+                          </h2>
+                          <p className="text-sm text-[#141414]/40 mt-1">
+                            {activeTab === 'profile' && 'Mettez à jour vos informations et votre vitrine.'}
+                            {activeTab === 'messages' && 'Gérez vos demandes de clients (En direct).'}
+                            {activeTab === 'stats' && 'Visualisez votre impact écologique à Angers.'}
+                          </p>
                         </div>
-                        <button 
-                          onClick={() => setIsDashboardOpen(false)}
-                          className="p-3 bg-white border border-[#141414]/10 rounded-2xl hover:bg-[#141414]/5"
-                        >
-                          <Share2 className="w-5 h-5 text-[#141414]/40" />
-                        </button>
                       </header>
 
-                      <article className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                        <div className="space-y-8">
-                          <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-6">
-                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#A5A58D]">Informations Générales</h4>
-                            <div className="space-y-4">
-                              <div>
-                                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Nom de l'artisan</label>
-                                <input 
-                                  value={registrationForm.name}
-                                  onChange={(e) => setRegistrationForm({...registrationForm, name: e.target.value})}
-                                  className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
-                                />
+                      {activeTab === 'profile' && (
+                        <article className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                          <div className="space-y-8">
+                            <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-6">
+                              <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#A5A58D]">Vitrine Publique</h4>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Nom commercial</label>
+                                  <input 
+                                    value={registrationForm.name}
+                                    onChange={(e) => setRegistrationForm({...registrationForm, name: e.target.value})}
+                                    className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">URL de l'image de profil</label>
+                                  <input 
+                                    value={registrationForm.image}
+                                    onChange={(e) => setRegistrationForm({...registrationForm, image: e.target.value})}
+                                    placeholder="Lien vers une image Unsplash ou autre"
+                                    className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Ville / Quartier</label>
+                                    <input 
+                                      value={registrationForm.location}
+                                      onChange={(e) => setRegistrationForm({...registrationForm, location: e.target.value})}
+                                      className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Catégorie</label>
+                                    <select 
+                                      value={registrationForm.category}
+                                      onChange={(e) => setRegistrationForm({...registrationForm, category: e.target.value as Category})}
+                                      className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                                    >
+                                      {categories.filter(c => c !== 'Tous').map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Slogan publicitaire</label>
+                                  <textarea 
+                                    value={registrationForm.description}
+                                    onChange={(e) => setRegistrationForm({...registrationForm, description: e.target.value})}
+                                    className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm h-16 resize-none focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                                  />
+                                </div>
                               </div>
-                              <div>
-                                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Localisation</label>
-                                <input 
-                                  value={registrationForm.location}
-                                  onChange={(e) => setRegistrationForm({...registrationForm, location: e.target.value})}
-                                  className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Description Courte</label>
-                                <textarea 
-                                  value={registrationForm.description}
-                                  onChange={(e) => setRegistrationForm({...registrationForm, description: e.target.value})}
-                                  className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm h-20 resize-none focus:ring-1 focus:ring-[#5A5A40] outline-none"
-                                />
+                            </div>
+
+                            <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-6">
+                              <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#A5A58D]">Contact Professionnel</h4>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Email</label>
+                                  <input 
+                                    value={registrationForm.email}
+                                    onChange={(e) => setRegistrationForm({...registrationForm, email: e.target.value})}
+                                    className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Téléphone</label>
+                                  <input 
+                                    value={registrationForm.phone}
+                                    onChange={(e) => setRegistrationForm({...registrationForm, phone: e.target.value})}
+                                    className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Site Web</label>
+                                  <input 
+                                    value={registrationForm.website}
+                                    onChange={(e) => setRegistrationForm({...registrationForm, website: e.target.value})}
+                                    className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                                  />
+                                </div>
                               </div>
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-4">
-                            <div className="bg-white p-6 rounded-3xl border border-[#141414]/5 text-center">
-                              <span className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 block mb-2">Vues</span>
-                              <span className="text-2xl font-bold">1,2k</span>
+                          <div className="space-y-8">
+                            <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-6">
+                              <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#A5A58D]">À propos (Détaillé)</h4>
+                              <textarea 
+                                value={registrationForm.longDescription}
+                                onChange={(e) => setRegistrationForm({...registrationForm, longDescription: e.target.value})}
+                                placeholder="Racontez votre histoire, votre passion pour le vélo-cargo..."
+                                className="w-full bg-[#F5F5F0] border-none rounded-xl p-4 text-sm h-48 resize-none focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                              />
                             </div>
-                            <div className="bg-white p-6 rounded-3xl border border-[#141414]/5 text-center">
-                              <span className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 block mb-2">Favoris</span>
-                              <span className="text-2xl font-bold">{Math.floor(Math.random() * 50) + 10}</span>
-                            </div>
-                            <div className="bg-white p-6 rounded-3xl border border-[#141414]/5 text-center">
-                              <span className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 block mb-2">Avis</span>
-                              <span className="text-2xl font-bold">{loggedPro.reviews?.length || 0}</span>
-                            </div>
-                          </div>
-                        </div>
 
-                        <div className="space-y-8">
-                          <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-6">
-                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#A5A58D]">Biographie Détaillée</h4>
-                            <textarea 
-                              value={registrationForm.longDescription}
-                              onChange={(e) => setRegistrationForm({...registrationForm, longDescription: e.target.value})}
-                              placeholder="Racontez votre histoire..."
-                              className="w-full bg-[#F5F5F0] border-none rounded-xl p-4 text-sm h-48 resize-none focus:ring-1 focus:ring-[#5A5A40] outline-none"
-                            />
-                          </div>
-
-                          <div className="bg-[#141414] p-8 rounded-[2rem] text-white">
-                            <div className="flex items-center gap-4 mb-6">
-                              <div className="p-3 bg-[#5A5A40] rounded-2xl text-white">
-                                <Leaf className="w-5 h-5" />
-                              </div>
-                              <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Éco-Score Partenaire</h4>
-                            </div>
-                            <div className="flex justify-between items-end">
-                              <div>
-                                <span className="text-5xl font-serif italic">{loggedPro.co2Saved || 120}</span>
-                                <span className="text-xs font-bold uppercase tracking-widest ml-2 text-white/40">kg CO2 Économisés</span>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-[#A5A58D]">Objectif 2025</p>
-                                <p className="text-sm font-bold">85% Complété</p>
-                              </div>
-                            </div>
-                            <div className="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
-                              <div className="h-full bg-[#5A5A40] w-4/5 rounded-full" />
-                            </div>
-                          </div>
-
-                          <div className="flex gap-4">
-                            <button 
-                              onClick={async () => {
-                                const path = `entrepreneurs/${loggedPro.id}`;
-                                try {
-                                  const updatedData = {
-                                    name: registrationForm.name,
-                                    description: registrationForm.description,
-                                    longDescription: registrationForm.longDescription,
-                                    location: registrationForm.location,
-                                    image: registrationForm.image,
-                                    category: registrationForm.category,
-                                    contact: {
-                                      ...loggedPro.contact,
-                                      email: registrationForm.email,
-                                      phone: registrationForm.phone,
-                                      website: registrationForm.website
-                                    },
-                                    updatedAt: serverTimestamp()
-                                  };
-                                  await updateDoc(doc(db, path), updatedData);
-                                  
-                                  // Visual feedback for saving
-                                  const btn = document.getElementById('save-btn');
-                                  if (btn) {
-                                    const originalText = btn.innerHTML;
-                                    btn.innerHTML = "Sauvegardé ✓";
-                                    btn.classList.add('bg-green-600');
-                                    setTimeout(() => {
-                                      btn.innerHTML = originalText;
-                                      btn.classList.remove('bg-green-600');
-                                    }, 2000);
+                            <div className="flex gap-4">
+                              <button 
+                                onClick={async () => {
+                                  const path = `entrepreneurs/${loggedPro.id}`;
+                                  try {
+                                    const updatedData = {
+                                      name: registrationForm.name,
+                                      description: registrationForm.description,
+                                      longDescription: registrationForm.longDescription,
+                                      location: registrationForm.location,
+                                      image: registrationForm.image,
+                                      category: registrationForm.category,
+                                      contact: {
+                                        ...loggedPro.contact,
+                                        email: registrationForm.email,
+                                        phone: registrationForm.phone,
+                                        website: registrationForm.website
+                                      },
+                                      updatedAt: serverTimestamp()
+                                    };
+                                    await updateDoc(doc(db, path), updatedData);
+                                    
+                                    const btn = document.getElementById('save-btn');
+                                    if (btn) {
+                                      const originalText = btn.innerHTML;
+                                      btn.innerHTML = "Sauvegardé ✓";
+                                      btn.style.backgroundColor = '#16a34a';
+                                      setTimeout(() => {
+                                        btn.innerHTML = originalText;
+                                        btn.style.backgroundColor = '#5A5A40';
+                                      }, 2000);
+                                    }
+                                  } catch (error) {
+                                    handleFirestoreError(error, OperationType.UPDATE, path);
                                   }
-                                } catch (error) {
-                                  handleFirestoreError(error, OperationType.UPDATE, path);
-                                }
-                              }}
-                              id="save-btn"
-                              className="flex-1 py-4 bg-[#5A5A40] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-all active:scale-95 shadow-xl shadow-[#5A5A40]/20"
-                            >
-                              Enregistrer les modifications
-                            </button>
-                            <button 
-                              onClick={() => setIsDashboardOpen(false)}
-                              className="px-8 py-4 bg-white border border-[#141414]/10 rounded-2xl font-bold uppercase tracking-widest text-[#141414]/40 hover:bg-[#141414]/5 transition-colors"
-                            >
-                              Fermer
-                            </button>
+                                }}
+                                id="save-btn"
+                                className="flex-1 py-4 bg-[#5A5A40] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-all active:scale-95 shadow-xl shadow-[#5A5A40]/20"
+                              >
+                                Enregistrer les modifications
+                              </button>
+                              <button 
+                                onClick={() => setIsDashboardOpen(false)}
+                                className="px-8 py-4 bg-white border border-[#141414]/10 rounded-2xl font-bold uppercase tracking-widest text-[#141414]/40 hover:bg-[#141414]/5 transition-colors"
+                              >
+                                Quitter
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      )}
+
+                      {activeTab === 'messages' && (
+                        <div className="space-y-6">
+                          {[
+                            { id: 1, sender: "Marie D.", time: "Il y a 2h", text: "Bonjour, seriez-vous disponible pour une livraison demain matin centre-ville ?", read: false },
+                            { id: 2, sender: "Association Cyclo", time: "Hier", text: "Bravo pour votre engagement ! Nous aimerions vous interviewer.", read: true },
+                            { id: 3, sender: "Jean-Pierre L.", time: "Il y a 3 jours", text: "Votre service de maintenance est top, merci pour le dépannage.", read: true },
+                          ].map(msg => (
+                            <div key={msg.id} className={`flex items-start gap-6 p-6 rounded-3xl border transition-all ${msg.read ? 'bg-white border-[#141414]/5' : 'bg-[#5A5A40]/5 border-[#5A5A40]/20 ring-1 ring-[#5A5A40]/10'}`}>
+                              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${msg.read ? 'bg-[#141414]/5' : 'bg-[#5A5A40]'}`}>
+                                <User className={`w-6 h-6 ${msg.read ? 'text-[#141414]/40' : 'text-white'}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-center mb-1">
+                                  <h5 className="font-bold text-sm tracking-tight">{msg.sender}</h5>
+                                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/30">{msg.time}</span>
+                                </div>
+                                <p className="text-sm text-[#141414]/60 line-clamp-2 leading-relaxed">{msg.text}</p>
+                              </div>
+                              <button className="px-4 py-2 bg-white border border-[#141414]/10 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[#141414]/5 transition-colors">
+                                Répondre
+                              </button>
+                            </div>
+                          ))}
+                          <div className="bg-[#141414] p-8 rounded-[2rem] text-center">
+                            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Fin de messagerie</p>
                           </div>
                         </div>
-                      </article>
+                      )}
+
+                      {activeTab === 'stats' && (
+                        <div className="space-y-12">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-4">
+                              <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center">
+                                <TrendingDown className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <span className="text-3xl font-bold">148</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/30 ml-2">Visites cette semaine</span>
+                              </div>
+                            </div>
+                            <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-4">
+                              <div className="w-12 h-12 bg-green-500/10 text-green-500 rounded-2xl flex items-center justify-center">
+                                <Leaf className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <span className="text-3xl font-bold">{loggedPro.co2Saved || 85}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/30 ml-2">Kg CO2 économisés</span>
+                              </div>
+                            </div>
+                            <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-4">
+                              <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center">
+                                <Star className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <span className="text-3xl font-bold">4.9/5</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/30 ml-2">Note moyenne</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-[#141414] p-12 rounded-[3rem] text-white overflow-hidden relative">
+                             <div className="relative z-10">
+                               <h3 className="text-4xl font-serif italic mb-2 text-[#A5A58D]">Progression Impact</h3>
+                               <p className="text-sm text-white/40 mb-12">Votre contribution à la transition écologique d'Angers.</p>
+                               <div className="h-64 flex items-end gap-2 group">
+                                 {[40, 60, 45, 90, 65, 80, 100, 70, 85, 110, 95, 120].map((val, i) => (
+                                   <div 
+                                      key={i} 
+                                      className="flex-1 bg-[#5A5A40]/40 rounded-t-xl hover:bg-[#5A5A40] transition-all cursor-crosshair relative group/bar"
+                                      style={{ height: `${val}%` }}
+                                   >
+                                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-[#141414] px-2 py-1 rounded-lg text-[10px] font-bold opacity-0 group-hover/bar:opacity-100 transition-opacity">
+                                        {val}kg
+                                      </div>
+                                   </div>
+                                 ))}
+                               </div>
+                               <div className="flex justify-between mt-6 text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">
+                                 <span>Janvier 2024</span>
+                                 <span>Décembre 2024</span>
+                               </div>
+                             </div>
+                             <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-[#5A5A40]/10 rounded-full blur-[100px]" />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -823,10 +992,20 @@ export default function App() {
                       </div>
                       
                       {selectedPro.siret && (
-                        <div className="pt-4 border-t border-[#141414]/5">
+                        <div className="pt-4 border-t border-[#141414]/5 mb-4">
                           <span className="text-[10px] font-mono text-[#141414]/40">SIRET: {selectedPro.siret}</span>
                         </div>
                       )}
+
+                      <button 
+                        onClick={() => {
+                          alert("Demande transmise ! L'artisan pourra vous répondre directement via son tableau de bord.");
+                        }}
+                        className="w-full py-4 bg-[#5A5A40] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-all hover:shadow-lg hover:shadow-[#5A5A40]/30 active:scale-95 flex items-center justify-center gap-3"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        Envoyer un message
+                      </button>
                     </div>
                   </div>
 
@@ -942,15 +1121,35 @@ export default function App() {
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Email de contact</label>
+                        <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Email de contact *</label>
                         <input 
                           type="email" 
                           placeholder="votre@email.com"
-                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                          className={`w-full bg-white border ${formErrors.email ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-colors`}
                           value={registrationForm.email}
-                          onChange={(e) => setRegistrationForm({ ...registrationForm, email: e.target.value })}
+                          onChange={(e) => {
+                            setRegistrationForm({ ...registrationForm, email: e.target.value });
+                            if (formErrors.email) setFormErrors(prev => ({ ...prev, email: '' }));
+                          }}
                         />
+                        {formErrors.email && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.email}</p>}
                       </div>
+                      {!currentUser && (
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Mot de passe *</label>
+                          <input 
+                            type="password" 
+                            placeholder="Min 6 caractères"
+                            className={`w-full bg-white border ${formErrors.password ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-colors`}
+                            value={registrationForm.password}
+                            onChange={(e) => {
+                              setRegistrationForm({ ...registrationForm, password: e.target.value });
+                              if (formErrors.password) setFormErrors(prev => ({ ...prev, password: '' }));
+                            }}
+                          />
+                          {formErrors.password && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.password}</p>}
+                        </div>
+                      )}
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Téléphone</label>
                         <input 
@@ -1011,26 +1210,40 @@ export default function App() {
                   <div className="mt-8 flex gap-4">
                     <button 
                       onClick={async () => {
-                        if (!currentUser) {
-                          alert("Vous devez être connecté avec Google pour vous inscrire.");
-                          return;
-                        }
-
                         const errors: Record<string, string> = {};
                         if (!registrationForm.name.trim()) errors.name = "Nom requis";
                         if (!registrationForm.category) errors.category = "Catégorie requise";
                         if (!registrationForm.description.trim()) errors.description = "Description requise";
                         if (!registrationForm.location.trim()) errors.location = "Localisation requise";
 
+                        if (!currentUser) {
+                          if (!registrationForm.email.trim()) errors.email = "Email requis";
+                          if (!registrationForm.password || registrationForm.password.length < 6) errors.password = "Min 6 caractères";
+                        }
+
                         if (Object.keys(errors).length > 0) {
                           setFormErrors(errors);
                           return;
                         }
 
-                        const proId = Date.now().toString();
-                        const path = `entrepreneurs/${proId}`;
-                        
+                        setIsRegisteringDoc(true);
                         try {
+                          let ownerUid = currentUser?.uid;
+                          let ownerEmail = currentUser?.email || registrationForm.email;
+
+                          if (!currentUser) {
+                            const userCreds = await registerWithEmail(registrationForm.email, registrationForm.password);
+                            ownerUid = userCreds.user.uid;
+                            ownerEmail = userCreds.user.email || registrationForm.email;
+                          }
+
+                          if (!ownerUid) {
+                            throw new Error("Impossible de récupérer l'ID utilisateur");
+                          }
+
+                          const proId = Date.now().toString();
+                          const path = `entrepreneurs/${proId}`;
+                          
                           await setDoc(doc(db, path), {
                             name: registrationForm.name,
                             category: registrationForm.category,
@@ -1042,12 +1255,12 @@ export default function App() {
                             image: registrationForm.image || "https://images.unsplash.com/photo-1590674154471-1678ee20a1ad?q=80&w=800&auto=format&fit=crop",
                             co2Saved: 0,
                             contact: {
-                              email: registrationForm.email || currentUser.email,
+                              email: ownerEmail,
                               phone: registrationForm.phone,
                               website: registrationForm.website
                             },
                             reviews: [],
-                            ownerId: currentUser.uid,
+                            ownerId: ownerUid,
                             createdAt: serverTimestamp(),
                             updatedAt: serverTimestamp()
                           });
@@ -1062,18 +1275,31 @@ export default function App() {
                             longDescription: '',
                             location: '',
                             email: '',
+                            password: '',
                             phone: '',
                             website: '',
                             image: '',
                             coordinates: [47.4710, -0.5520]
                           });
-                        } catch (error) {
-                          handleFirestoreError(error, OperationType.CREATE, path);
+                          setIsDashboardOpen(true);
+                        } catch (error: any) {
+                          console.error(error);
+                          alert("Erreur lors de l'inscription : " + (error.message || "Erreur inconnue"));
+                        } finally {
+                          setIsRegisteringDoc(false);
                         }
                       }}
-                      className="flex-1 py-4 bg-[#141414] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-colors shadow-xl shadow-[#141414]/20"
+                      disabled={isRegisteringDoc}
+                      className="flex-1 py-4 bg-[#141414] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-all shadow-xl shadow-[#141414]/20 flex items-center justify-center gap-3 disabled:opacity-70"
                     >
-                      Valider mon inscription
+                      {isRegisteringDoc ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                          <span>Inscription...</span>
+                        </>
+                      ) : (
+                        "Valider mon inscription"
+                      )}
                     </button>
                     <button 
                       onClick={() => {
