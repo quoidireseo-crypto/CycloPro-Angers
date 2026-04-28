@@ -158,9 +158,9 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
   };
 
   return (
-    <div className={`fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[#141414]/90 backdrop-blur-md`}>
-      <div className={`w-full ${step === 'create' ? 'max-w-2xl' : 'max-w-md'} bg-[#F5F5F0] rounded-[2rem] p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto`}>
-        <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-[#141414]/5 rounded-full z-10 transition-colors">
+    <div className={`fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[#0F1A15]/90 backdrop-blur-md`}>
+      <div className={`w-full ${step === 'create' ? 'max-w-2xl' : 'max-w-md'} bg-[#F8F6F2] rounded-[2rem] p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto`}>
+        <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-[#0F1A15]/5 rounded-full z-10 transition-colors">
           <X className="w-5 h-5" />
         </button>
         
@@ -174,35 +174,35 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
         {step === 'choice' && (
           <div className="text-center py-4">
             <h2 className="text-3xl font-serif italic mb-2">Bienvenue !</h2>
-            <p className="text-sm text-[#141414]/60 mb-8">Votre compte est prêt. Comment souhaitez-vous continuer ?</p>
+            <p className="text-sm text-[#0F1A15]/60 mb-8">Votre compte est prêt. Comment souhaitez-vous continuer ?</p>
             <div className="space-y-4">
               {matchingProfile && (
                 <button 
                   onClick={() => setStep('claim')}
-                  className="w-full group p-6 bg-white border border-[#5A5A40]/20 rounded-2xl text-left hover:border-[#5A5A40] transition-all hover:shadow-lg"
+                  className="w-full group p-6 bg-white border border-[#E04A26]/20 rounded-2xl text-left hover:border-[#E04A26] transition-all hover:shadow-lg"
                 >
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                       <CheckCircle className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-[#141414]">Réclamer un profil existant</h3>
-                      <p className="text-xs text-[#141414]/50 mt-1">Nous avons trouvé un profil : <strong>{matchingProfile.name}</strong></p>
+                      <h3 className="font-bold text-[#0F1A15]">Réclamer un profil existant</h3>
+                      <p className="text-xs text-[#0F1A15]/50 mt-1">Nous avons trouvé un profil : <strong>{matchingProfile.name}</strong></p>
                     </div>
                   </div>
                 </button>
               )}
               <button 
                 onClick={() => setStep('create')}
-                className="w-full group p-6 bg-white border border-[#5A5A40]/20 rounded-2xl text-left hover:border-[#5A5A40] transition-all hover:shadow-lg"
+                className="w-full group p-6 bg-white border border-[#E04A26]/20 rounded-2xl text-left hover:border-[#E04A26] transition-all hover:shadow-lg"
               >
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-[#5A5A40]/10 text-[#5A5A40] rounded-xl">
+                  <div className="p-3 bg-[#E04A26]/10 text-[#E04A26] rounded-xl">
                     <Plus className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-[#141414]">Créer un nouveau profil</h3>
-                    <p className="text-xs text-[#141414]/50 mt-1">Configurez votre fiche artisan complète de A à Z.</p>
+                    <h3 className="font-bold text-[#0F1A15]">Créer un nouveau profil</h3>
+                    <p className="text-xs text-[#0F1A15]/50 mt-1">Configurez votre fiche artisan complète de A à Z.</p>
                   </div>
                 </div>
               </button>
@@ -213,20 +213,20 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
         {step === 'login' && !currentUser && (
           <div className="text-center">
             <h2 className="text-3xl font-serif italic mb-2">{isLogin ? "Espace Artisan" : "Inscription Artisan"}</h2>
-            <p className="text-sm text-[#141414]/60 mb-8">Connectez-vous pour gérer votre présence sur Angers.</p>
+            <p className="text-sm text-[#0F1A15]/60 mb-8">Connectez-vous pour gérer votre présence sur Angers.</p>
             
             <button 
               onClick={handleGoogleLogin} 
-              className="w-full py-4 bg-white border border-[#141414]/10 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#141414]/5 transition-all mb-6 shadow-sm"
+              className="w-full py-4 bg-white border border-[#0F1A15]/10 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#0F1A15]/5 transition-all mb-6 shadow-sm"
             >
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
               Continuer avec Google
             </button>
 
             <div className="relative flex py-2 items-center mb-6">
-              <div className="flex-grow border-t border-[#141414]/10"></div>
-              <span className="flex-shrink-0 mx-4 text-[#141414]/40 text-[10px] font-bold uppercase tracking-widest">Ou avec un email</span>
-              <div className="flex-grow border-t border-[#141414]/10"></div>
+              <div className="flex-grow border-t border-[#0F1A15]/10"></div>
+              <span className="flex-shrink-0 mx-4 text-[#0F1A15]/40 text-[10px] font-bold uppercase tracking-widest">Ou avec un email</span>
+              <div className="flex-grow border-t border-[#0F1A15]/10"></div>
             </div>
 
             <form onSubmit={handleEmailAuth} className="space-y-4">
@@ -236,7 +236,7 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-white border border-[#141414]/10 rounded-xl p-4 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                className="w-full bg-white border border-[#0F1A15]/10 rounded-xl p-4 text-sm focus:ring-1 focus:ring-[#E04A26] outline-none"
               />
               <input 
                 type="password" 
@@ -244,12 +244,12 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full bg-white border border-[#141414]/10 rounded-xl p-4 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
+                className="w-full bg-white border border-[#0F1A15]/10 rounded-xl p-4 text-sm focus:ring-1 focus:ring-[#E04A26] outline-none"
               />
               <button 
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 bg-[#5A5A40] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-all disabled:opacity-50 shadow-xl shadow-[#5A5A40]/20"
+                className="w-full py-4 bg-[#E04A26] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#B83A1C] transition-all disabled:opacity-50 shadow-xl shadow-[#E04A26]/20"
               >
                 {isLoading ? "Chargement..." : (isLogin ? "Se connecter" : "S'inscrire")}
               </button>
@@ -257,7 +257,7 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
 
             <button 
               onClick={() => setIsLogin(!isLogin)}
-              className="mt-6 text-[10px] font-bold uppercase tracking-wider text-[#5A5A40]/80 hover:text-[#5A5A40] transition-colors underline decoration-dotted"
+              className="mt-6 text-[10px] font-bold uppercase tracking-wider text-[#E04A26]/80 hover:text-[#E04A26] transition-colors underline decoration-dotted"
             >
               {isLogin ? "Pas encore de compte ? Créer un profil" : "Déjà un compte ? Se connecter"}
             </button>
@@ -270,26 +270,26 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
               <CheckCircle className="w-10 h-10" />
             </div>
             <h2 className="text-3xl font-serif italic mb-4">Profil trouvé !</h2>
-            <div className="bg-white p-6 rounded-2xl border border-[#141414]/5 mb-8 text-left">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-1">Entreprise</p>
+            <div className="bg-white p-6 rounded-2xl border border-[#0F1A15]/5 mb-8 text-left">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#0F1A15]/40 mb-1">Entreprise</p>
               <h3 className="text-xl font-bold mb-2">{matchingProfile.name}</h3>
-              <p className="text-xs text-[#141414]/60 mb-4">{matchingProfile.description}</p>
-              <div className="flex items-center gap-2 text-xs text-[#5A5A40] font-medium">
+              <p className="text-xs text-[#0F1A15]/60 mb-4">{matchingProfile.description}</p>
+              <div className="flex items-center gap-2 text-xs text-[#E04A26] font-medium">
                 <MapPin className="w-3 h-3" />
                 {matchingProfile.location}
               </div>
             </div>
-            <p className="text-sm text-[#141414]/60 mb-8 px-4">Réclamez ce profil pour prendre le contrôle sur vos informations et répondre aux avis de vos clients.</p>
+            <p className="text-sm text-[#0F1A15]/60 mb-8 px-4">Réclamez ce profil pour prendre le contrôle sur vos informations et répondre aux avis de vos clients.</p>
             <button 
               onClick={handleClaim} 
               disabled={isLoading}
-              className="w-full py-4 bg-[#5A5A40] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-all shadow-xl shadow-[#5A5A40]/20 flex items-center justify-center gap-2"
+              className="w-full py-4 bg-[#E04A26] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#B83A1C] transition-all shadow-xl shadow-[#E04A26]/20 flex items-center justify-center gap-2"
             >
               {isLoading ? "Traitement..." : "Confirmer la réclamation"}
             </button>
             <button 
               onClick={() => setStep('choice')}
-              className="mt-4 text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 hover:text-[#141414]"
+              className="mt-4 text-[10px] font-bold uppercase tracking-widest text-[#0F1A15]/40 hover:text-[#0F1A15]"
             >
               Retour
             </button>
@@ -299,33 +299,33 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
         {step === 'create' && (
           <div>
             <div className="text-center mb-10">
-              <div className="w-16 h-16 bg-[#5A5A40]/10 text-[#5A5A40] rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-[#E04A26]/10 text-[#E04A26] rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Briefcase className="w-8 h-8" />
               </div>
               <h2 className="text-3xl font-serif italic mb-2">Votre Profil Artisan</h2>
-              <p className="text-sm text-[#141414]/60">Offrez une visibilité maximale à votre activité décarbonée.</p>
+              <p className="text-sm text-[#0F1A15]/60">Offrez une visibilité maximale à votre activité décarbonée.</p>
             </div>
             
             <form onSubmit={handleCreateProfile} className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-1.5 ml-1">Nom de l'entreprise *</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0F1A15]/40 mb-1.5 ml-1">Nom de l'entreprise *</label>
                   <input 
                     type="text" 
                     placeholder="Ex: Angers Cyclo Plomberie"
                     value={newProfile.name}
                     onChange={(e) => setNewProfile({...newProfile, name: e.target.value})}
                     required
-                    className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-all"
+                    className="w-full bg-white border border-[#0F1A15]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#E04A26] outline-none transition-all"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-1.5 ml-1">Catégorie *</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0F1A15]/40 mb-1.5 ml-1">Catégorie *</label>
                   <select 
                     value={newProfile.category}
                     onChange={(e) => setNewProfile({...newProfile, category: e.target.value as Category})}
-                    className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-all appearance-none"
+                    className="w-full bg-white border border-[#0F1A15]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#E04A26] outline-none transition-all appearance-none"
                   >
                     {categories.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -334,84 +334,84 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-1.5 ml-1">SIRET</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0F1A15]/40 mb-1.5 ml-1">SIRET</label>
                   <input 
                     type="text" 
                     placeholder="14 chiffres"
                     value={newProfile.siret}
                     onChange={(e) => setNewProfile({...newProfile, siret: e.target.value})}
-                    className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-all"
+                    className="w-full bg-white border border-[#0F1A15]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#E04A26] outline-none transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-1.5 ml-1">Ville ou Secteur *</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0F1A15]/40 mb-1.5 ml-1">Ville ou Secteur *</label>
                   <input 
                     type="text" 
                     placeholder="Ex: Quartier Doutre, Belle-Beille..."
                     value={newProfile.location}
                     onChange={(e) => setNewProfile({...newProfile, location: e.target.value})}
                     required
-                    className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-all"
+                    className="w-full bg-white border border-[#0F1A15]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#E04A26] outline-none transition-all"
                   />
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-1.5 ml-1">Téléphone</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0F1A15]/40 mb-1.5 ml-1">Téléphone</label>
                   <input 
                     type="tel" 
                     placeholder="06 XX XX XX XX"
                     value={newProfile.phone}
                     onChange={(e) => setNewProfile({...newProfile, phone: e.target.value})}
-                    className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-all"
+                    className="w-full bg-white border border-[#0F1A15]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#E04A26] outline-none transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-1.5 ml-1">Site Web</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0F1A15]/40 mb-1.5 ml-1">Site Web</label>
                   <input 
                     type="url" 
                     placeholder="https://votre-site.fr"
                     value={newProfile.website}
                     onChange={(e) => setNewProfile({...newProfile, website: e.target.value})}
-                    className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-all"
+                    className="w-full bg-white border border-[#0F1A15]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#E04A26] outline-none transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-1.5 ml-1">URL Image (Optionnel)</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0F1A15]/40 mb-1.5 ml-1">URL Image (Optionnel)</label>
                   <input 
                     type="url" 
                     placeholder="https://image-de-votre-activite.jpg"
                     value={newProfile.image}
                     onChange={(e) => setNewProfile({...newProfile, image: e.target.value})}
-                    className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-all"
+                    className="w-full bg-white border border-[#0F1A15]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#E04A26] outline-none transition-all"
                   />
                 </div>
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-1.5 ml-1">Description courte *</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0F1A15]/40 mb-1.5 ml-1">Description courte *</label>
                 <textarea 
                   placeholder="Accroche publicitaire en une phrase..."
                   value={newProfile.description}
                   onChange={(e) => setNewProfile({...newProfile, description: e.target.value})}
                   required
                   rows={2}
-                  className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none resize-none transition-all"
+                  className="w-full bg-white border border-[#0F1A15]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#E04A26] outline-none resize-none transition-all"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-1.5 ml-1">Description détaillée (Story-telling)</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0F1A15]/40 mb-1.5 ml-1">Description détaillée (Story-telling)</label>
                 <textarea 
                   placeholder="Détaillez vos services, votre équipement, vos valeurs..."
                   value={newProfile.longDescription}
                   onChange={(e) => setNewProfile({...newProfile, longDescription: e.target.value})}
                   rows={4}
-                  className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none resize-none transition-all"
+                  className="w-full bg-white border border-[#0F1A15]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#E04A26] outline-none resize-none transition-all"
                 />
               </div>
 
@@ -419,7 +419,7 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
                 <button 
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-4 bg-[#5A5A40] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-all disabled:opacity-50 shadow-xl shadow-[#5A5A40]/20 flex items-center justify-center gap-3"
+                  className="w-full py-4 bg-[#E04A26] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#B83A1C] transition-all disabled:opacity-50 shadow-xl shadow-[#E04A26]/20 flex items-center justify-center gap-3"
                 >
                   {isLoading ? (
                     <>
