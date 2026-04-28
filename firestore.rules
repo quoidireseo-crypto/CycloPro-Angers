@@ -29,13 +29,25 @@ service cloud.firestore {
 
     // Entrepreneur Validation
     function isValidEntrepreneur(data) {
-      return data.keys().hasAll(['name', 'category', 'description', 'location']) &&
+      return data.keys().hasAll(['name', 'category', 'description', 'location', 'ownerId', 'createdAt', 'updatedAt']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
              data.category is string && data.category.size() > 0 &&
              data.description is string && data.description.size() > 0 && data.description.size() <= 500 &&
              data.location is string && data.location.size() > 0 &&
-             (!('email' in data.contact) || data.contact.email is string) &&
-             (!('co2Saved' in data) || data.co2Saved is number);
+             data.ownerId is string &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp &&
+             (!('siret' in data) || data.siret is string) &&
+             (!('longDescription' in data) || data.longDescription is string) &&
+             (!('image' in data) || data.image is string) &&
+             (!('co2Saved' in data) || data.co2Saved is number) &&
+             (!('contact' in data) || (
+               data.contact is map &&
+               (!('email' in data.contact) || data.contact.email is string) &&
+               (!('phone' in data.contact) || data.contact.phone is string) &&
+               (!('website' in data.contact) || data.contact.website is string)
+             )) &&
+             (!('reviews' in data) || data.reviews is list);
     }
 
     match /entrepreneurs/{entrepreneurId} {

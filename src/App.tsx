@@ -148,27 +148,12 @@ export default function App() {
   const [activeReviewProId, setActiveReviewProId] = useState<string | null>(null);
   const [selectedPro, setSelectedPro] = useState<Entrepreneur | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [isRegisteringDoc, setIsRegisteringDoc] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [loggedPro, setLoggedPro] = useState<Entrepreneur | null>(null);
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [newReview, setNewReview] = useState({ userName: '', rating: 5, comment: '' });
-  const [registrationForm, setRegistrationForm] = useState({
-    name: '',
-    category: 'Paysage' as Category,
-    siret: '',
-    description: '',
-    longDescription: '',
-    location: '',
-    email: '',
-    password: '',
-    phone: '',
-    website: '',
-    image: '',
-    coordinates: [47.4710, -0.5520] as [number, number]
-  });
 
   const [activeTab, setActiveTab] = useState<'profile' | 'messages' | 'stats'>('profile');
+  const [dashboardForm, setDashboardForm] = useState<any>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -203,9 +188,26 @@ export default function App() {
   useEffect(() => {
     if (currentUser && data.length > 0) {
       const found = data.find(p => (p as any).ownerId === currentUser.uid);
-      if (found) setLoggedPro(found);
+      if (found) {
+        setLoggedPro(found);
+        // Initialize dashboard form with profile data
+        if (!dashboardForm) {
+          setDashboardForm({
+            name: found.name,
+            category: found.category,
+            description: found.description,
+            longDescription: found.longDescription || '',
+            location: found.location,
+            email: found.contact.email,
+            phone: found.contact.phone || '',
+            website: found.contact.website || '',
+            image: found.image || ''
+          });
+        }
+      }
     } else if (!currentUser) {
       setLoggedPro(null);
+      setDashboardForm(null);
     }
   }, [currentUser, data]);
 
@@ -369,12 +371,15 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Dashboard Modal */}
+        {/* Onboarding / Registration Modal */}
         <AnimatePresence>
-          {isDashboardOpen && !loggedPro && (
+          {(isRegistering || (isDashboardOpen && !loggedPro)) && (
             <OnboardingFlow 
-              isOpen={isDashboardOpen} 
-              onClose={() => setIsDashboardOpen(false)} 
+              isOpen={true}
+              onClose={() => {
+                setIsRegistering(false);
+                setIsDashboardOpen(false);
+              }}
               currentUser={currentUser}
               entrepreneurs={data}
             />
@@ -462,8 +467,7 @@ export default function App() {
                           </p>
                         </div>
                       </header>
-
-                      {activeTab === 'profile' && (
+                      {activeTab === 'profile' && dashboardForm && (
                         <article className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                           <div className="space-y-8">
                             <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-6">
@@ -472,16 +476,16 @@ export default function App() {
                                 <div>
                                   <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Nom commercial</label>
                                   <input 
-                                    value={registrationForm.name}
-                                    onChange={(e) => setRegistrationForm({...registrationForm, name: e.target.value})}
+                                    value={dashboardForm.name}
+                                    onChange={(e) => setDashboardForm({...dashboardForm, name: e.target.value})}
                                     className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
                                   />
                                 </div>
                                 <div>
                                   <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">URL de l'image de profil</label>
                                   <input 
-                                    value={registrationForm.image}
-                                    onChange={(e) => setRegistrationForm({...registrationForm, image: e.target.value})}
+                                    value={dashboardForm.image}
+                                    onChange={(e) => setDashboardForm({...dashboardForm, image: e.target.value})}
                                     placeholder="Lien vers une image Unsplash ou autre"
                                     className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
                                   />
@@ -490,16 +494,16 @@ export default function App() {
                                   <div>
                                     <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Ville / Quartier</label>
                                     <input 
-                                      value={registrationForm.location}
-                                      onChange={(e) => setRegistrationForm({...registrationForm, location: e.target.value})}
+                                      value={dashboardForm.location}
+                                      onChange={(e) => setDashboardForm({...dashboardForm, location: e.target.value})}
                                       className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
                                     />
                                   </div>
                                   <div>
                                     <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Catégorie</label>
                                     <select 
-                                      value={registrationForm.category}
-                                      onChange={(e) => setRegistrationForm({...registrationForm, category: e.target.value as Category})}
+                                      value={dashboardForm.category}
+                                      onChange={(e) => setDashboardForm({...dashboardForm, category: e.target.value as Category})}
                                       className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
                                     >
                                       {categories.filter(c => c !== 'Tous').map(cat => (
@@ -511,8 +515,8 @@ export default function App() {
                                 <div>
                                   <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Slogan publicitaire</label>
                                   <textarea 
-                                    value={registrationForm.description}
-                                    onChange={(e) => setRegistrationForm({...registrationForm, description: e.target.value})}
+                                    value={dashboardForm.description}
+                                    onChange={(e) => setDashboardForm({...dashboardForm, description: e.target.value})}
                                     className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm h-16 resize-none focus:ring-1 focus:ring-[#5A5A40] outline-none"
                                   />
                                 </div>
@@ -525,24 +529,24 @@ export default function App() {
                                 <div>
                                   <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Email</label>
                                   <input 
-                                    value={registrationForm.email}
-                                    onChange={(e) => setRegistrationForm({...registrationForm, email: e.target.value})}
+                                    value={dashboardForm.email}
+                                    onChange={(e) => setDashboardForm({...dashboardForm, email: e.target.value})}
                                     className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
                                   />
                                 </div>
                                 <div>
                                   <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Téléphone</label>
                                   <input 
-                                    value={registrationForm.phone}
-                                    onChange={(e) => setRegistrationForm({...registrationForm, phone: e.target.value})}
+                                    value={dashboardForm.phone}
+                                    onChange={(e) => setDashboardForm({...dashboardForm, phone: e.target.value})}
                                     className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
                                   />
                                 </div>
                                 <div>
                                   <label className="block text-[10px] font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Site Web</label>
                                   <input 
-                                    value={registrationForm.website}
-                                    onChange={(e) => setRegistrationForm({...registrationForm, website: e.target.value})}
+                                    value={dashboardForm.website}
+                                    onChange={(e) => setDashboardForm({...dashboardForm, website: e.target.value})}
                                     className="w-full bg-[#F5F5F0] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
                                   />
                                 </div>
@@ -554,8 +558,8 @@ export default function App() {
                             <div className="bg-white p-8 rounded-[2rem] border border-[#141414]/5 space-y-6">
                               <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#A5A58D]">À propos (Détaillé)</h4>
                               <textarea 
-                                value={registrationForm.longDescription}
-                                onChange={(e) => setRegistrationForm({...registrationForm, longDescription: e.target.value})}
+                                value={dashboardForm.longDescription}
+                                onChange={(e) => setDashboardForm({...dashboardForm, longDescription: e.target.value})}
                                 placeholder="Racontez votre histoire, votre passion pour le vélo-cargo..."
                                 className="w-full bg-[#F5F5F0] border-none rounded-xl p-4 text-sm h-48 resize-none focus:ring-1 focus:ring-[#5A5A40] outline-none"
                               />
@@ -564,20 +568,21 @@ export default function App() {
                             <div className="flex gap-4">
                               <button 
                                 onClick={async () => {
+                                  if (!loggedPro) return;
                                   const path = `entrepreneurs/${loggedPro.id}`;
                                   try {
                                     const updatedData = {
-                                      name: registrationForm.name,
-                                      description: registrationForm.description,
-                                      longDescription: registrationForm.longDescription,
-                                      location: registrationForm.location,
-                                      image: registrationForm.image,
-                                      category: registrationForm.category,
+                                      name: dashboardForm.name,
+                                      description: dashboardForm.description,
+                                      longDescription: dashboardForm.longDescription,
+                                      location: dashboardForm.location,
+                                      image: dashboardForm.image,
+                                      category: dashboardForm.category,
                                       contact: {
                                         ...loggedPro.contact,
-                                        email: registrationForm.email,
-                                        phone: registrationForm.phone,
-                                        website: registrationForm.website
+                                        email: dashboardForm.email,
+                                        phone: dashboardForm.phone,
+                                        website: dashboardForm.website
                                       },
                                       updatedAt: serverTimestamp()
                                     };
@@ -841,293 +846,6 @@ export default function App() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Modal for registration */}
-        <AnimatePresence>
-          {isRegistering && !loggedPro && (
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-6">
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsRegistering(false)}
-                className="absolute inset-0 bg-[#141414]/80 backdrop-blur-sm"
-              />
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-2xl bg-[#F5F5F0] rounded-[2.5rem] overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
-              >
-                <div className="p-8 md:p-12">
-                  <header className="flex justify-between items-start mb-8">
-                    <div>
-                      <h2 className="text-3xl md:text-4xl font-serif italic">Rejoindre le Réseau</h2>
-                      <p className="text-[#141414]/60 mt-2">Créez votre profil artisan à vélo à Angers.</p>
-                    </div>
-                    <button 
-                      onClick={() => setIsRegistering(false)}
-                      className="p-2 hover:bg-[#141414]/5 rounded-full transition-colors"
-                    >
-                      <X className="w-6 h-6" />
-                    </button>
-                  </header>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Nom de l'entreprise *</label>
-                        <input 
-                          type="text" 
-                          placeholder="Ex: Sicle Plomberie"
-                          className={`w-full bg-white border ${formErrors.name ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-colors`}
-                          value={registrationForm.name}
-                          onChange={(e) => {
-                            setRegistrationForm({ ...registrationForm, name: e.target.value });
-                            if (formErrors.name) setFormErrors(prev => ({ ...prev, name: '' }));
-                          }}
-                        />
-                        {formErrors.name && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.name}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Catégorie *</label>
-                        <select 
-                          className={`w-full bg-white border ${formErrors.category ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none appearance-none transition-colors`}
-                          value={registrationForm.category}
-                          onChange={(e) => {
-                            setRegistrationForm({ ...registrationForm, category: e.target.value as Category });
-                            if (formErrors.category) setFormErrors(prev => ({ ...prev, category: '' }));
-                          }}
-                        >
-                          {categories.filter(c => c !== 'Tous').map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                        {formErrors.category && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.category}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Numéro SIRET</label>
-                        <input 
-                          type="text" 
-                          placeholder="14 chiffres"
-                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
-                          value={registrationForm.siret}
-                          onChange={(e) => setRegistrationForm({ ...registrationForm, siret: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Localisation *</label>
-                        <input 
-                          type="text" 
-                          placeholder="Ex: Quartier de la Doutre, Angers"
-                          className={`w-full bg-white border ${formErrors.location ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-colors`}
-                          value={registrationForm.location}
-                          onChange={(e) => {
-                            setRegistrationForm({ ...registrationForm, location: e.target.value });
-                            if (formErrors.location) setFormErrors(prev => ({ ...prev, location: '' }));
-                          }}
-                        />
-                        {formErrors.location && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.location}</p>}
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Email de contact *</label>
-                        <input 
-                          type="email" 
-                          placeholder="votre@email.com"
-                          className={`w-full bg-white border ${formErrors.email ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-colors`}
-                          value={registrationForm.email}
-                          onChange={(e) => {
-                            setRegistrationForm({ ...registrationForm, email: e.target.value });
-                            if (formErrors.email) setFormErrors(prev => ({ ...prev, email: '' }));
-                          }}
-                        />
-                        {formErrors.email && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.email}</p>}
-                      </div>
-                      {!currentUser && (
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Mot de passe *</label>
-                          <input 
-                            type="password" 
-                            placeholder="Min 6 caractères"
-                            className={`w-full bg-white border ${formErrors.password ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none transition-colors`}
-                            value={registrationForm.password}
-                            onChange={(e) => {
-                              setRegistrationForm({ ...registrationForm, password: e.target.value });
-                              if (formErrors.password) setFormErrors(prev => ({ ...prev, password: '' }));
-                            }}
-                          />
-                          {formErrors.password && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.password}</p>}
-                        </div>
-                      )}
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Téléphone</label>
-                        <input 
-                          type="text" 
-                          placeholder="06 XX XX XX XX"
-                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
-                          value={registrationForm.phone}
-                          onChange={(e) => setRegistrationForm({ ...registrationForm, phone: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Site Web</label>
-                        <input 
-                          type="url" 
-                          placeholder="https://..."
-                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
-                          value={registrationForm.website}
-                          onChange={(e) => setRegistrationForm({ ...registrationForm, website: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Lien de la photo (URL)</label>
-                        <input 
-                          type="url" 
-                          placeholder="https://images.unsplash.com/..."
-                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
-                          value={registrationForm.image}
-                          onChange={(e) => setRegistrationForm({ ...registrationForm, image: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Description courte *</label>
-                    <textarea 
-                      placeholder="Présentez votre activité en une phrase..."
-                      className={`w-full bg-white border ${formErrors.description ? 'border-red-500' : 'border-[#141414]/10'} rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none h-20 resize-none transition-colors`}
-                      value={registrationForm.description}
-                      onChange={(e) => {
-                        setRegistrationForm({ ...registrationForm, description: e.target.value });
-                        if (formErrors.description) setFormErrors(prev => ({ ...prev, description: '' }));
-                      }}
-                    />
-                    {formErrors.description && <p className="text-[10px] text-red-500 font-bold mt-1 px-1 uppercase tracking-tight">{formErrors.description}</p>}
-                  </div>
-
-                  <div className="mt-6">
-                    <label className="block text-xs font-bold uppercase tracking-widest text-[#141414]/40 mb-2">Description détaillée (Profil complet)</label>
-                    <textarea 
-                      placeholder="Détaillez vos services, votre équipement vélo, votre histoire..."
-                      className="w-full bg-white border border-[#141414]/10 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none h-32 resize-none"
-                      value={registrationForm.longDescription}
-                      onChange={(e) => setRegistrationForm({ ...registrationForm, longDescription: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="mt-8 flex gap-4">
-                    <button 
-                      onClick={async () => {
-                        const errors: Record<string, string> = {};
-                        if (!registrationForm.name.trim()) errors.name = "Nom requis";
-                        if (!registrationForm.category) errors.category = "Catégorie requise";
-                        if (!registrationForm.description.trim()) errors.description = "Description requise";
-                        if (!registrationForm.location.trim()) errors.location = "Localisation requise";
-
-                        if (!currentUser) {
-                          if (!registrationForm.email.trim()) errors.email = "Email requis";
-                          if (!registrationForm.password || registrationForm.password.length < 6) errors.password = "Min 6 caractères";
-                        }
-
-                        if (Object.keys(errors).length > 0) {
-                          setFormErrors(errors);
-                          return;
-                        }
-
-                        setIsRegisteringDoc(true);
-                        try {
-                          let ownerUid = currentUser?.uid;
-                          let ownerEmail = currentUser?.email || registrationForm.email;
-
-                          if (!currentUser) {
-                            const userCreds = await registerWithEmail(registrationForm.email, registrationForm.password);
-                            ownerUid = userCreds.user.uid;
-                            ownerEmail = userCreds.user.email || registrationForm.email;
-                          }
-
-                          if (!ownerUid) {
-                            throw new Error("Impossible de récupérer l'ID utilisateur");
-                          }
-
-                          const proId = Date.now().toString();
-                          const path = `entrepreneurs/${proId}`;
-                          
-                          await setDoc(doc(db, path), {
-                            name: registrationForm.name,
-                            category: registrationForm.category,
-                            siret: registrationForm.siret,
-                            description: registrationForm.description,
-                            longDescription: registrationForm.longDescription,
-                            location: registrationForm.location,
-                            coordinates: registrationForm.coordinates,
-                            image: registrationForm.image || "https://images.unsplash.com/photo-1590674154471-1678ee20a1ad?q=80&w=800&auto=format&fit=crop",
-                            co2Saved: 0,
-                            contact: {
-                              email: ownerEmail,
-                              phone: registrationForm.phone,
-                              website: registrationForm.website
-                            },
-                            reviews: [],
-                            ownerId: ownerUid,
-                            createdAt: serverTimestamp(),
-                            updatedAt: serverTimestamp()
-                          });
-
-                          setIsRegistering(false);
-                          setFormErrors({});
-                          setRegistrationForm({
-                            name: '',
-                            category: 'Paysage',
-                            siret: '',
-                            description: '',
-                            longDescription: '',
-                            location: '',
-                            email: '',
-                            password: '',
-                            phone: '',
-                            website: '',
-                            image: '',
-                            coordinates: [47.4710, -0.5520]
-                          });
-                          setIsDashboardOpen(true);
-                        } catch (error: any) {
-                          console.error(error);
-                          alert("Erreur lors de l'inscription : " + (error.message || "Erreur inconnue"));
-                        } finally {
-                          setIsRegisteringDoc(false);
-                        }
-                      }}
-                      disabled={isRegisteringDoc}
-                      className="flex-1 py-4 bg-[#141414] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-all shadow-xl shadow-[#141414]/20 flex items-center justify-center gap-3 disabled:opacity-70"
-                    >
-                      {isRegisteringDoc ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                          <span>Inscription...</span>
-                        </>
-                      ) : (
-                        "Valider mon inscription"
-                      )}
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setIsRegistering(false);
-                        setFormErrors({});
-                      }}
-                      className="px-8 py-4 bg-white border border-[#141414]/10 rounded-2xl font-bold uppercase tracking-widest hover:bg-red-50 text-red-500 transition-colors"
-                    >
-                      Annuler
-                    </button>
                   </div>
                 </div>
               </motion.div>
