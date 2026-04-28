@@ -34,6 +34,7 @@ import {
   TrendingDown,
   Users,
   Trophy,
+  User as UserIcon,
   Facebook,
   Twitter,
   Linkedin,
@@ -63,6 +64,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { entrepreneurs as initialData } from './data';
 import { Category, Entrepreneur, Review } from './types';
+import OnboardingFlow from './components/OnboardingFlow';
 
 enum OperationType {
   CREATE = 'create',
@@ -295,12 +297,14 @@ export default function App() {
                   <p className="text-[10px] text-[#5A5A40] font-bold uppercase tracking-wider">Artisans à vélo</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsRegistering(true)}
-                className="md:hidden px-3 py-1.5 bg-[#141414] text-white rounded-full text-[9px] font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-colors whitespace-nowrap"
-              >
-                Inscrire
-              </button>
+              {!loggedPro && (
+                <button 
+                  onClick={() => setIsRegistering(true)}
+                  className="md:hidden px-3 py-1.5 bg-[#141414] text-white rounded-full text-[9px] font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-colors whitespace-nowrap"
+                >
+                  Inscrire
+                </button>
+              )}
               <button 
                 onClick={() => setIsDashboardOpen(true)}
                 className="md:hidden ml-2 p-2 bg-white border border-[#141414]/10 rounded-full text-[#141414]"
@@ -330,12 +334,14 @@ export default function App() {
                   <Users className="w-4 h-4" />
                   Mon Espace
                 </button>
-                <button 
-                  onClick={() => setIsRegistering(true)}
-                  className="hidden md:block px-4 py-2 bg-[#141414] text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-colors whitespace-nowrap"
-                >
-                  Devenir partenaire
-                </button>
+                {!loggedPro && (
+                  <button 
+                    onClick={() => setIsRegistering(true)}
+                    className="hidden md:block px-4 py-2 bg-[#141414] text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-colors whitespace-nowrap"
+                  >
+                    Devenir partenaire
+                  </button>
+                )}
 
                 <div className="flex items-center gap-1.5 md:gap-2">
                   <div className="flex bg-white border border-[#141414]/10 rounded-full p-0.5 md:p-1 shadow-sm">
@@ -365,202 +371,16 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Dashboard Modal */}
         <AnimatePresence>
-          {isDashboardOpen && (
-            <div className="fixed inset-0 z-[2000] flex items-center justify-center p-0 md:p-6">
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-[#141414]/90 backdrop-blur-md"
-                onClick={() => {
-                  if (!loggedPro) setIsDashboardOpen(false);
-                }}
-              />
-              
-              {!loggedPro ? (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="relative w-full max-w-md bg-[#F5F5F0] rounded-[2rem] p-8 shadow-2xl mx-4"
-                >
-                  <button 
-                    onClick={() => setIsDashboardOpen(false)}
-                    className="absolute top-6 right-6 p-2 hover:bg-[#141414]/5 rounded-full"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-[#5A5A40] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Users className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-serif italic">Espace Artisan</h2>
-                    <p className="text-sm text-[#141414]/60 mt-2">Accédez à votre tableau de bord de gestion.</p>
-                  </div>
-                  
-                        <div className="space-y-4">
-                    {!currentUser ? (
-                      <div className="space-y-4">
-                        <button 
-                          onClick={async () => {
-                            setIsLoggingIn(true);
-                            try {
-                              // Force a new window if we detect we are in an iframe
-                              if (window.self !== window.top) {
-                                window.open(window.location.href, '_blank');
-                                return;
-                              }
-                              await signInWithGoogle();
-                            } catch (error: any) {
-                              console.error("Login error:", error);
-                              if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
-                                alert("Le popup a été bloqué. Cliquez sur le lien ci-dessous pour ouvrir l'app en plein écran.");
-                              } else {
-                                alert("Erreur de connexion : " + (error.message || "Erreur inconnue"));
-                              }
-                            } finally {
-                              setIsLoggingIn(false);
-                            }
-                          }}
-                          disabled={isLoggingIn}
-                          className="w-full py-4 bg-white border border-[#141414]/10 rounded-xl font-bold uppercase tracking-widest hover:bg-[#141414]/5 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-sm disabled:opacity-50"
-                        >
-                          {isLoggingIn ? (
-                            <div className="w-5 h-5 border-2 border-[#141414]/20 border-t-[#141414] rounded-full animate-spin" />
-                          ) : (
-                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
-                          )}
-                          {isLoggingIn ? "Connexion..." : "Continuer avec Google"}
-                        </button>
-                        
-                        <div className="relative flex py-2 items-center">
-                          <div className="flex-grow border-t border-[#141414]/10"></div>
-                          <span className="flex-shrink-0 mx-4 text-[#141414]/40 text-xs font-bold uppercase">Ou</span>
-                          <div className="flex-grow border-t border-[#141414]/10"></div>
-                        </div>
-
-                        <input 
-                          type="email" 
-                          placeholder="Adresse email"
-                          value={loginForm.email}
-                          onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-4 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
-                        />
-                        <input 
-                          type="password" 
-                          placeholder="Mot de passe"
-                          value={loginForm.password}
-                          onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                          className="w-full bg-white border border-[#141414]/10 rounded-xl p-4 text-sm focus:ring-1 focus:ring-[#5A5A40] outline-none"
-                        />
-                        <button 
-                          onClick={async () => {
-                            if (!loginForm.email || !loginForm.password) {
-                              alert("Veuillez remplir l'email et le mot de passe");
-                              return;
-                            }
-                            setIsLoggingIn(true);
-                            try {
-                              await loginWithEmail(loginForm.email, loginForm.password);
-                            } catch (error: any) {
-                              console.error("Login error:", error);
-                              alert("Erreur de connexion : " + error.message);
-                            } finally {
-                              setIsLoggingIn(false);
-                            }
-                          }}
-                          disabled={isLoggingIn}
-                          className="w-full py-4 bg-[#5A5A40] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-colors disabled:opacity-50"
-                        >
-                          Se connecter avec Email
-                        </button>
-                        
-                        <div className="bg-[#5A5A40]/10 border border-[#5A5A40]/20 p-5 rounded-2xl">
-                          <div className="flex items-start gap-3 mb-3">
-                            <ExternalLink className="w-4 h-4 text-[#5A5A40] shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-[#5A5A40] font-bold uppercase tracking-wider">Instructions de connexion</p>
-                          </div>
-                          <p className="text-xs text-[#5A5A40]/80 leading-relaxed mb-4">
-                            Les navigateurs bloquent souvent la connexion dans cet aperçu. Pour un accès complet :
-                          </p>
-                          <a 
-                            href={window.location.href} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="block w-full py-3 bg-[#5A5A40] text-white text-center rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-colors"
-                          >
-                            Ouvrir dans un nouvel onglet
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="p-4 bg-[#5A5A40]/10 rounded-xl mb-4">
-                          <p className="text-xs font-bold uppercase text-[#5A5A40] mb-1">Session active</p>
-                          <p className="text-sm font-medium">{currentUser.email}</p>
-                        </div>
-                        <button 
-                          onClick={() => {
-                            const pro = data.find(p => (p as any).ownerId === currentUser.uid);
-                            if (pro) {
-                              setLoggedPro(pro);
-                              setRegistrationForm({
-                                name: pro.name,
-                                category: pro.category,
-                                siret: pro.siret || '',
-                                description: pro.description,
-                                longDescription: pro.longDescription || '',
-                                location: pro.location,
-                                email: pro.contact.email || '',
-                                phone: pro.contact.phone || '',
-                                website: pro.contact.website || '',
-                                image: pro.image || '',
-                                coordinates: pro.coordinates
-                              });
-                            } else {
-                              alert("Aucun profil artisan lié à ce compte Google. Veuillez vous inscrire d'abord.");
-                            }
-                          }}
-                          className="w-full py-4 bg-[#141414] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#5A5A40] transition-all active:scale-95 shadow-xl shadow-[#141414]/20"
-                        >
-                          Accéder à mon tableau de bord
-                        </button>
-
-                        {data.length === 0 && (
-                          <button 
-                            onClick={async () => {
-                              try {
-                                for (const pro of initialData) {
-                                  const proId = pro.id || Date.now().toString() + Math.random().toString(36).substr(2, 5);
-                                  await setDoc(doc(db, 'entrepreneurs', proId), {
-                                    ...pro,
-                                    ownerId: currentUser.uid, // Use current user as temporary owner for demo
-                                    createdAt: serverTimestamp(),
-                                    updatedAt: serverTimestamp()
-                                  });
-                                }
-                                alert("Données de démonstration chargées !");
-                              } catch (error) {
-                                handleFirestoreError(error, OperationType.WRITE, 'entrepreneurs');
-                              }
-                            }}
-                            className="w-full py-3 border border-[#5A5A40] text-[#5A5A40] rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#5A5A40]/5 transition-colors"
-                          >
-                            Charger les données de démo
-                          </button>
-                        )}
-                        <button 
-                          onClick={() => signOut(auth)}
-                          className="w-full py-3 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-4"
-                        >
-                          Se déconnecter de Google
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div 
+          {isDashboardOpen && !loggedPro && (
+            <OnboardingFlow 
+              isOpen={isDashboardOpen} 
+              onClose={() => setIsDashboardOpen(false)} 
+              currentUser={currentUser}
+              entrepreneurs={data}
+            />
+          )}
+          {isDashboardOpen && loggedPro && (
+            <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
@@ -802,7 +622,7 @@ export default function App() {
                           ].map(msg => (
                             <div key={msg.id} className={`flex items-start gap-6 p-6 rounded-3xl border transition-all ${msg.read ? 'bg-white border-[#141414]/5' : 'bg-[#5A5A40]/5 border-[#5A5A40]/20 ring-1 ring-[#5A5A40]/10'}`}>
                               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${msg.read ? 'bg-[#141414]/5' : 'bg-[#5A5A40]'}`}>
-                                <User className={`w-6 h-6 ${msg.read ? 'text-[#141414]/40' : 'text-white'}`} />
+                                <UserIcon className={`w-6 h-6 ${msg.read ? 'text-[#141414]/40' : 'text-white'}`} />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-center mb-1">
@@ -883,8 +703,6 @@ export default function App() {
                     </div>
                   </div>
                 </motion.div>
-              )}
-            </div>
           )}
         </AnimatePresence>
 
@@ -1032,7 +850,7 @@ export default function App() {
 
         {/* Modal for registration */}
         <AnimatePresence>
-          {isRegistering && (
+          {isRegistering && !loggedPro && (
             <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-6">
               <motion.div 
                 initial={{ opacity: 0 }}
