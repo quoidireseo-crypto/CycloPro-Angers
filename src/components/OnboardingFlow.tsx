@@ -87,10 +87,24 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
         await loginWithEmail(email, password);
       } else {
         await registerWithEmail(email, password);
-        // After registration, the useEffect will trigger 'choice' step
       }
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de l\'authentification.');
+      const messages: Record<string, string> = {
+        'auth/email-already-in-use':
+          'Cette adresse email est déjà utilisée. Essayez de vous connecter.',
+        'auth/account-exists-with-different-credential':
+          'Un compte existe déjà avec cet email via Google. Utilisez le bouton "Continuer avec Google".',
+        'auth/invalid-email': 'Adresse email invalide.',
+        'auth/weak-password': 'Le mot de passe doit contenir au moins 6 caractères.',
+        'auth/user-not-found': 'Aucun compte trouvé avec cet email.',
+        'auth/wrong-password': 'Mot de passe incorrect.',
+        'auth/invalid-credential': 'Email ou mot de passe incorrect.',
+        'auth/too-many-requests': 'Trop de tentatives échouées. Réessayez dans quelques minutes.',
+        'auth/operation-not-allowed':
+          "L'authentification par email n'est pas activée. Utilisez Google.",
+        'auth/network-request-failed': 'Erreur réseau. Vérifiez votre connexion.',
+      };
+      setError(messages[err.code] ?? err.message ?? "Erreur lors de l'authentification.");
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +118,6 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
         ownerId: currentUser.uid,
         updatedAt: serverTimestamp()
       });
-      alert('Profil réclamé avec succès !');
       onClose();
     } catch (err: any) {
       console.error(err);
@@ -147,7 +160,6 @@ export default function OnboardingFlow({ isOpen, onClose, currentUser, entrepren
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
-      alert('Profil créé avec succès !');
       onClose();
     } catch (err: any) {
       console.error(err);

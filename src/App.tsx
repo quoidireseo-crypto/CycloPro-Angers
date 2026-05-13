@@ -137,6 +137,90 @@ const CATEGORY_ICONS: Record<Category, React.ReactNode> = {
   Logistique: <Boxes className="w-4 h-4" />,
 };
 
+interface ToastItem {
+  id: string;
+  type: "success" | "error" | "info";
+  message: string;
+}
+
+function ToastContainer({
+  toasts,
+  onDismiss,
+}: {
+  toasts: ToastItem[];
+  onDismiss: (id: string) => void;
+}) {
+  return (
+    <div className="fixed top-6 right-6 z-[2000] flex flex-col gap-3 pointer-events-none">
+      <AnimatePresence>
+        {toasts.map((t) => (
+          <motion.div
+            key={t.id}
+            initial={{ opacity: 0, x: 60, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 60, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 320, damping: 26 }}
+            className={`pointer-events-auto flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl text-sm font-medium max-w-xs border ${
+              t.type === "success"
+                ? "bg-[#0F1A15] text-white border-white/10"
+                : t.type === "error"
+                  ? "bg-red-600 text-white border-red-500/30"
+                  : "bg-white text-[#0F1A15] border-[#0F1A15]/10"
+            }`}
+          >
+            <span className="shrink-0 text-base">
+              {t.type === "success" ? "✓" : t.type === "error" ? "✕" : "ℹ"}
+            </span>
+            <span className="flex-1 leading-snug">{t.message}</span>
+            <button
+              onClick={() => onDismiss(t.id)}
+              className="ml-2 opacity-40 hover:opacity-100 transition-opacity shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className="bg-[#FFFCF9] rounded-[2rem] overflow-hidden border-2 border-[#0F1A15]/5">
+      <div className="h-44 bg-[#0F1A15]/[0.06] animate-pulse" />
+      <div className="p-6 space-y-4">
+        <div
+          className="h-5 w-28 bg-[#0F1A15]/[0.06] rounded-full animate-pulse"
+          style={{ animationDelay: "75ms" }}
+        />
+        <div
+          className="h-6 w-3/4 bg-[#0F1A15]/[0.06] rounded-xl animate-pulse"
+          style={{ animationDelay: "150ms" }}
+        />
+        <div className="space-y-2 pt-1">
+          <div
+            className="h-3 w-full bg-[#0F1A15]/[0.06] rounded animate-pulse"
+            style={{ animationDelay: "225ms" }}
+          />
+          <div
+            className="h-3 w-5/6 bg-[#0F1A15]/[0.06] rounded animate-pulse"
+            style={{ animationDelay: "300ms" }}
+          />
+          <div
+            className="h-3 w-2/3 bg-[#0F1A15]/[0.06] rounded animate-pulse"
+            style={{ animationDelay: "375ms" }}
+          />
+        </div>
+        <div
+          className="h-10 w-full bg-[#0F1A15]/[0.06] rounded-2xl animate-pulse"
+          style={{ animationDelay: "450ms" }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function StarRating({ rating, size = 12 }: { rating: number; size?: number }) {
   return (
     <div className="flex gap-0.5">
@@ -184,6 +268,20 @@ export default function App() {
     const saved = localStorage.getItem("angers_artisans_favs");
     return saved ? JSON.parse(saved) : [];
   });
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const addToast = (type: ToastItem["type"], message: string) => {
+    const id = Date.now().toString();
+    setToasts((prev) => [...prev, { id, type, message }]);
+    setTimeout(
+      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
+      3500,
+    );
+  };
+
+  const dismissToast = (id: string) =>
+    setToasts((prev) => prev.filter((t) => t.id !== id));
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
@@ -199,6 +297,7 @@ export default function App() {
           ...doc.data(),
         })) as Entrepreneur[];
         setData(proList);
+        setIsDataLoading(false);
       },
       (error) => {
         handleFirestoreError(error, OperationType.LIST, "entrepreneurs");
@@ -302,7 +401,7 @@ export default function App() {
 
   const handleAddReview = async (proId: string) => {
     if (!currentUser) {
-      alert("Vous devez être connecté pour laisser un avis.");
+      addToast("info", "Connectez-vous pour laisser un avis.");
       setIsDashboardOpen(true);
       return;
     }
@@ -331,6 +430,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F8F6F2] text-[#0F1A15] font-sans overflow-x-hidden">
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#F8F6F2]/80 backdrop-blur-md border-b border-[#0F1A15]/10 px-6 py-4">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
@@ -364,17 +464,64 @@ export default function App() {
             </button>
           </div>
 
+          {/* Mobile search + category filter */}
+          <div className="md:hidden flex items-center bg-white border border-[#0F1A15]/10 rounded-full shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-[#E04A26]/20 transition-all">
+            <Search className="ml-3 w-4 h-4 text-[#0F1A15]/40 shrink-0" />
+            <input
+              type="text"
+              placeholder="Artisan, service..."
+              className="flex-1 pl-2 pr-3 py-2 bg-transparent text-sm focus:outline-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <div className="h-5 w-px bg-[#0F1A15]/10 shrink-0" />
+            <div className="relative flex items-center pr-1">
+              <select
+                value={selectedCategory}
+                onChange={(e) =>
+                  setSelectedCategory(e.target.value as Category | "Tous")
+                }
+                className="appearance-none bg-transparent text-xs font-bold text-[#E04A26] pl-3 pr-6 py-2 focus:outline-none cursor-pointer"
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              <Filter className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#0F1A15]/30 pointer-events-none" />
+            </div>
+          </div>
+
           <div className="flex items-center gap-3 w-full md:w-auto">
-            {/* Search on desktop */}
-            <div className="relative flex-1 max-w-md hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F1A15]/40" />
+            {/* Search + category filter on desktop */}
+            <div className="hidden md:flex items-center flex-1 max-w-lg bg-white border border-[#0F1A15]/10 rounded-full shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-[#E04A26]/20 transition-all">
+              <Search className="ml-3 w-4 h-4 text-[#0F1A15]/40 shrink-0" />
               <input
+                id="search-input"
                 type="text"
                 placeholder="Artisan, service..."
-                className="w-full pl-10 pr-4 py-2 bg-white border border-[#0F1A15]/10 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#E04A26]/20 transition-all shadow-sm"
+                className="flex-1 pl-2 pr-3 py-2 bg-transparent text-sm focus:outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              <div className="h-5 w-px bg-[#0F1A15]/10 shrink-0" />
+              <div className="relative flex items-center pr-1">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) =>
+                    setSelectedCategory(e.target.value as Category | "Tous")
+                  }
+                  className="appearance-none bg-transparent text-xs font-bold text-[#E04A26] pl-3 pr-6 py-2 focus:outline-none cursor-pointer"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+                <Filter className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#0F1A15]/30 pointer-events-none" />
+              </div>
             </div>
 
             <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
@@ -1047,8 +1194,9 @@ export default function App() {
 
                       <button
                         onClick={() => {
-                          alert(
-                            "Demande transmise ! L'artisan pourra vous répondre directement via son tableau de bord.",
+                          addToast(
+                            "success",
+                            "Demande transmise ! L'artisan vous répondra bientôt.",
                           );
                         }}
                         className="w-full py-4 bg-[#E04A26] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#B83A1C] transition-all hover:shadow-lg hover:shadow-[#E04A26]/30 active:scale-95 flex items-center justify-center gap-3"
@@ -1323,6 +1471,13 @@ export default function App() {
 
         {/* Results Section */}
         {viewMode === "grid" ? (
+          isDataLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence mode="popLayout">
               {filteredEntrepreneurs.map((pro) => (
@@ -1607,6 +1762,7 @@ export default function App() {
               ))}
             </AnimatePresence>
           </div>
+          )
         ) : (
           <div className="h-[600px] w-full rounded-[2.5rem] overflow-hidden border border-[#0F1A15]/10 shadow-2xl relative">
             <MapContainer
